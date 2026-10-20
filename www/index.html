@@ -406,8 +406,32 @@ body.theme-light .jcal-trigger{border-color:rgba(30,100,180,.18);}
 .acct-line{display:flex;flex-direction:column;gap:3px;margin-bottom:12px;}
 .acct-line b{font-size:13.5px;}
 .acct-line small{font-size:11px;color:var(--muted);}
-.acct-btns{display:flex;gap:8px;}
-.acct-btns .btn{flex:1;}
+.acct-btns{display:flex;gap:8px;flex-wrap:wrap;}
+.acct-btns .btn{flex:1;min-width:120px;}
+/* کارت جمع‌وجور حساب در منوی کناری — فقط نمایش */
+.drawer-acct{
+  margin:2px 6px 10px; padding:10px 12px; border-radius:14px;
+  border:1px solid var(--line); background:var(--panel-2);
+  display:flex; align-items:center; gap:10px; cursor:pointer;
+  transition:background .15s, border-color .15s;
+}
+.drawer-acct:active{transform:scale(.98);}
+.drawer-acct .av{
+  width:36px;height:36px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-weight:900;font-size:14px;color:#fff;
+  background:linear-gradient(135deg,#178BFF,#0B4D8C);
+  box-shadow:0 4px 12px rgba(23,139,255,.25);
+}
+.drawer-acct .meta{flex:1;min-width:0;text-align:right;}
+.drawer-acct .meta .nm{font-size:12.5px;font-weight:800;color:var(--paper);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.drawer-acct .meta .em{font-size:10.5px;color:var(--muted);margin-top:2px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;direction:ltr;text-align:right;}
+.drawer-acct .chev{color:var(--muted);font-size:14px;flex-shrink:0;opacity:.7;}
+.drawer-acct.guest .av{background:linear-gradient(135deg,#5a6a7a,#3a4550);font-size:16px;}
+.drawer-acct.guest .meta .nm{font-weight:700;color:var(--muted);}
+
 
 /* ===== dashboard quick label ===== */
 .quick-label{font-size:13px; font-weight:900; color:var(--quick-label); margin:0 0 8px;}
@@ -792,6 +816,8 @@ body.theme-light .toast{
   <!-- ===== SETTINGS (تنظیمات) ===== -->
   <div class="view" data-view="settings">
     <div class="sec-h"><h2>تنظیمات</h2></div>
+    <div class="sec-h" style="margin-top:0;"><h2>حساب کاربری</h2></div>
+    <div class="ent-card" id="settingsAcctBox" style="margin-bottom:14px;"></div>
     <div class="ent-card" style="margin-bottom:14px;">
       <div class="ent-meta" style="margin-bottom:8px;font-weight:800;color:var(--paper);">🎨 ظاهر برنامه</div>
       <div class="check-filter-row" style="margin:0;">
@@ -874,7 +900,7 @@ body.theme-light .toast{
     </div>
   </div>
   <nav class="drawer-nav">
-    <div class="ent-card" id="acctBox" style="margin:4px 4px 12px;padding:12px;"></div>
+    <div id="acctBox"></div>
     <button class="drawer-item active" data-tab="dashboard"><span class="ic">🗂️</span> داشبورد</button>
     <button class="drawer-item" data-tab="cashflow"><span class="ic">💹</span> درآمد و هزینه</button>
     <button class="drawer-item" data-tab="wealth"><span class="ic">🏛️</span> ثروت / اقتصاد</button>
@@ -3024,6 +3050,11 @@ document.addEventListener('click', function(e){
   if(t.id==='acctLoginBtn'){ gLogin(); return; }
   if(t.id==='acctSyncBtn'){ cloudSyncNow(); return; }
   if(t.id==='acctLogoutBtn'){ gLogout(); return; }
+  if(t.id==='drawerAcctBtn' || t.closest('#drawerAcctBtn')){
+    try{ document.getElementById('drawer').classList.remove('show'); document.getElementById('drawerOverlay').classList.remove('show'); }catch(e){}
+    switchTab('settings');
+    return;
+  }
   if(t.id==='sheetSubmitBtn'){ if(sheetSubmitHandler) sheetSubmitHandler(); return; }
   if(t.id==='sheetOverlay'){ closeSheet(); return; }
   if(t.id==='addReceivedCheckBtn'){ addBankCheck('received'); return; }
@@ -3587,16 +3618,44 @@ async function gLogout(){
   localStorage.removeItem(STORAGE_KEY); sessionStorage.removeItem('gate_skip'); location.reload();
 }
 function renderAccount(){
-  const box=document.getElementById('acctBox'); if(!box) return;
-  if(!sb){
-    box.innerHTML='<div class="empty-state" style="padding:14px;">سرویس ورود با گوگل بارگذاری نشده است. این نسخه باید با بیلد اصلی (APK) اجرا شود.</div>'; return;
+  const box=document.getElementById('acctBox');
+  const sbox=document.getElementById('settingsAcctBox');
+  const name=CU ? (CU.displayName||CU.email||'حساب گوگل') : '';
+  const email=CU ? (CU.email||'') : '';
+  const initial=CU ? (name.trim().charAt(0)||'U').toUpperCase() : '👤';
+  // منوی کناری: فقط نمایش اسم (کلیک → تنظیمات)
+  if(box){
+    if(!sb){
+      box.innerHTML='<div class="drawer-acct guest" id="drawerAcctBtn"><div class="av">?</div><div class="meta"><div class="nm">ورود در دسترس نیست</div><div class="em">بیلد کامل لازم است</div></div><span class="chev">‹</span></div>';
+    }else if(CU){
+      box.innerHTML=`<div class="drawer-acct" id="drawerAcctBtn" title="مدیریت حساب در تنظیمات"><div class="av">${esc(initial)}</div><div class="meta"><div class="nm">${esc(name)}</div><div class="em">${esc(email)}</div></div><span class="chev">‹</span></div>`;
+    }else{
+      box.innerHTML=`<div class="drawer-acct guest" id="drawerAcctBtn"><div class="av">👤</div><div class="meta"><div class="nm">وارد حساب نشده‌اید</div><div class="em">برای همگام‌سازی ضربه بزنید</div></div><span class="chev">‹</span></div>`;
+    }
   }
-  if(CU){
-    box.innerHTML=`<div class="acct-line"><b>${esc(CU.displayName||'حساب گوگل')}</b><small dir="ltr" style="text-align:right">${esc(CU.email||'')}</small><small>${cMsg||'✅ اطلاعات به این حساب لینک است و همگام می‌شود'}</small></div>
-      <div class="acct-btns"><button class="btn btn-panel" id="acctSyncBtn">🔄 همگام‌سازی</button><button class="btn btn-rust" id="acctLogoutBtn">خروج از حساب</button></div>`;
-  }else{
-    box.innerHTML=`<div class="ent-meta" style="margin-bottom:12px;line-height:1.9">برای اینکه اطلاعات هیچ‌وقت از بین نرود و روی همه دستگاه‌ها در دسترس باشد، وارد حساب گوگل شوید.</div>
-      <button class="btn btn-brass btn-full" id="acctLoginBtn">ورود با گوگل</button>`;
+  // تنظیمات: کنترل کامل حساب
+  if(sbox){
+    if(!sb){
+      sbox.innerHTML='<div class="ent-meta" style="line-height:1.8;">سرویس ورود با گوگل بارگذاری نشده است. این نسخه باید با بیلد اصلی (APK) اجرا شود.</div>';
+    }else if(CU){
+      sbox.innerHTML=`<div class="acct-line" style="margin-bottom:10px;">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
+          <div class="av" style="width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:16px;color:#fff;background:linear-gradient(135deg,#178BFF,#0B4D8C);">${esc(initial)}</div>
+          <div style="flex:1;min-width:0;">
+            <b style="font-size:14px;display:block;">${esc(name)}</b>
+            <small dir="ltr" style="display:block;text-align:right;color:var(--muted);font-size:11.5px;margin-top:3px;">${esc(email)}</small>
+          </div>
+        </div>
+        <small style="color:var(--muted);line-height:1.7;">${cMsg||'✅ اطلاعات به این حساب لینک است و همگام می‌شود'}</small>
+      </div>
+      <div class="acct-btns">
+        <button class="btn btn-panel" id="acctSyncBtn">🔄 همگام‌سازی</button>
+        <button class="btn btn-rust" id="acctLogoutBtn">خروج از حساب</button>
+      </div>`;
+    }else{
+      sbox.innerHTML=`<div class="ent-meta" style="margin-bottom:12px;line-height:1.9">با ورود به حساب گوگل، اطلاعات روی همه دستگاه‌ها همگام می‌شود و از بین نمی‌رود.</div>
+        <button class="btn btn-brass btn-full" id="acctLoginBtn">ورود با گوگل</button>`;
+    }
   }
 }
 document.addEventListener('visibilitychange',()=>{ if(!document.hidden && CU) cloudStart(); });
