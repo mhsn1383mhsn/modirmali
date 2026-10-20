@@ -2119,27 +2119,10 @@ function getNativeBiometric(){
 }
 function renderPinDots(){
   const el=document.getElementById('pinDots'); if(!el) return;
-  const n=Math.max(4, Math.min(8, pinSheetBuf.length||4));
+  const total=Math.max(4, Math.min(8, pinSheetBuf.length||0));
   let h='';
-  for(let i=0;i<n;i++) h+='<i class="'+(i<pinSheetBuf.length?'on':'')+'"></i>';
-  // همیشه تا ۸ نقطهٔ حداکثر
-  const show=Math.max(pinSheetBuf.length, 4);
-  el.innerHTML='';
-  for(let i=0;i<8;i++){
-    const d=document.createElement('i');
-    if(i<pinSheetBuf.length) d.className='on';
-    if(i>=show && pinSheetBuf.length<4) { /* keep 4 empty */ }
-    el.appendChild(d);
-    if(i===3 && pinSheetBuf.length<=4) break;
-    if(pinSheetBuf.length>4 && i===pinSheetBuf.length-1) break;
-    if(pinSheetBuf.length>4 && i>=pinSheetBuf.length && i>=4) break;
-  }
-  // ساده: به تعداد ارقام + باقی تا حداقل ۴
-  el.innerHTML='';
-  const total=Math.max(4, pinSheetBuf.length);
-  for(let i=0;i<total && i<8;i++){
-    el.innerHTML+='<i class="'+(i<pinSheetBuf.length?'on':'')+'"></i>';
-  }
+  for(let i=0;i<total;i++) h+='<i class="'+(i<pinSheetBuf.length?'on':'')+'"></i>';
+  el.innerHTML=h;
 }
 function openPinSheet(mode){
   pinSheetMode=mode; pinSheetBuf='';
@@ -3578,8 +3561,7 @@ document.addEventListener('change',function(e){
       })();
       return;
     }
-    STATE.settings.bioLock=false; saveState(); showToast('بیومتریک خاموش شد'); return; }
-    STATE.settings.bioLock = !!t.checked; saveState(); showToast(t.checked?'بیومتریک فعال شد':'بیومتریک خاموش شد'); return;
+    STATE.settings.bioLock=false; saveState(); showToast('بیومتریک خاموش شد'); return;
   }
   if(t.id==='remDailyToggle' || t.id==='dailyReminderToggle'){
     ensureReminderSettings();
