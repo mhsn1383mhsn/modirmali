@@ -19,4 +19,19 @@ if (!gradle.includes('dayflow-debug.keystore')) {
         }`);
   fs.writeFileSync(gradlePath, gradle);
 }
+
+// Deep link so Google login (Supabase OAuth) can return to the app.
+const manifestPath = path.join(root, 'android', 'app', 'src', 'main', 'AndroidManifest.xml');
+let manifest = fs.readFileSync(manifestPath, 'utf8');
+if (!manifest.includes('login-callback')) {
+  const filter = `
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="app.dayflow.planner" android:host="login-callback" />
+            </intent-filter>`;
+  manifest = manifest.replace(/(<activity[\s\S]*?)(<\/activity>)/, (m, a, b) => a + filter + '\n        ' + b);
+  fs.writeFileSync(manifestPath, manifest);
+}
 console.log('patch-android: OK');

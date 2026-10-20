@@ -9,12 +9,6 @@
     "backgroundColor": "#03070C"
   },
   "plugins": {
-    "FirebaseAuthentication": {
-      "skipNativeAuth": true,
-      "providers": [
-        "google.com"
-      ]
-    },
     "LocalNotifications": {
       "smallIcon": "ic_stat_icon_config_sample",
       "iconColor": "#178BFF",

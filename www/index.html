@@ -714,9 +714,7 @@ body.theme-light .free-toggle{background:#F5F8FC !important;border-color:var(--l
   </div>
 </div>
 
-<script src="vendor/firebase-app-compat.js"></script>
-<script src="vendor/firebase-auth-compat.js"></script>
-<script src="vendor/firebase-firestore-compat.js"></script>
+<script src="vendor/supabase.js"></script>
 <script>
 /* ============== 1. Jalali Calendar & Formatting Utilities ============== */
 const div = (a,b) => ~~(a/b);
@@ -2885,55 +2883,82 @@ document.addEventListener('change', e=>{
   }
 });
 
-/* ============== 9. Cloud Sync (Firebase Auth + Firestore) ============== */
-const FB_CFG = {apiKey:'AIzaSyCsgZyuRHDzpG8gKduDHW14LhwqvQcsXAY',authDomain:'dayflow-2f339.firebaseapp.com',projectId:'dayflow-2f339',appId:'1:616628450687:android:683cc3e1e35dc0d542964a'};
+/* ============== 9. Cloud Sync (Supabase Auth + Postgres) ============== */
+/* ⚠️ این دو مقدار را از Supabase → Project Settings → API بردار */
+const SB_URL = 'https://rrxxiykwzkwbsdzplact.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJyeHhpeWt3emt3YnNkenBsYWN0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI0MTIzMjYsImV4cCI6MjEwNzk4ODMyNn0.7dFhDOtoNKZAtKXsgSXxJed4fAKU2IthSwCK4gCDa-w';
+const SB_REDIRECT = 'app.dayflow.planner://login-callback'; // بازگشت به اپ بعد از ورود (فقط اندروید)
 const CAP = window.Capacitor || null;
 const isNative = () => !!(CAP && ((CAP.isNativePlatform && CAP.isNativePlatform()) || (CAP.getPlatform && CAP.getPlatform()!=='web')));
-let CU=null, cAuth=null, cDB=null, cTimer=0, cBusy=false, cMsg='';
+let CU=null, sb=null, cTimer=0, cBusy=false, cMsg='';
 
 const hasData = d => !!d && ['funds','wealthCategories','loans','persons','checks','transactions'].some(k=>(d[k]||[]).length>0);
-const cRef = () => cDB.collection('users').doc(CU.uid);
 const showGate = () => document.getElementById('gate')?.classList.add('show');
 const hideGate = () => document.getElementById('gate')?.classList.remove('show');
+const toUser = u => u ? {uid:u.id, displayName:(u.user_metadata && (u.user_metadata.full_name || u.user_metadata.name)) || '', email:u.email || ''} : null;
+const plugCache = {};
+function capPlug(name){
+  if(plugCache[name]) return plugCache[name];
+  try{ if(CAP?.registerPlugin) return plugCache[name] = CAP.registerPlugin(name); }catch(e){}
+  return CAP?.Plugins?.[name] || null;
+}
 
 function cloudInit(){
-  if(typeof firebase==='undefined'){ renderAccount(); return; }
+  if(typeof supabase==='undefined' || /YOUR-/.test(SB_URL+SB_KEY)){ renderAccount(); return; }
   try{
-    firebase.initializeApp(FB_CFG); cAuth=firebase.auth(); cDB=firebase.firestore();
-    try{ cDB.settings({experimentalAutoDetectLongPolling:true, merge:true}); }catch(e){}
-    cAuth.onAuthStateChanged(u=>{
-      CU = u||null;
-      if(CU){ hideGate(); cloudStart(); }
-      else if(!sessionStorage.getItem('gate_skip')) showGate();
-      renderAccount();
+    sb = supabase.createClient(SB_URL, SB_KEY, {auth:{flowType:'pkce', detectSessionInUrl:!isNative(), persistSession:true, autoRefreshToken:true}});
+    sb.auth.onAuthStateChange((ev, session)=>{
+      CU = toUser(session?.user);
+      // داخل این callback نباید مستقیم به Supabase درخواست بزنیم؛ به بعد موکول می‌شود
+      setTimeout(()=>{
+        if(CU){ hideGate(); if(ev==='INITIAL_SESSION' || ev==='SIGNED_IN') cloudStart(); }
+        else if(!sessionStorage.getItem('gate_skip')) showGate();
+        renderAccount();
+      }, 0);
     });
-  }catch(e){ console.warn('firebase init',e); renderAccount(); }
+    if(isNative()){
+      capPlug('App')?.addListener('appUrlOpen', async ({url})=>{
+        if(!url || !url.startsWith(SB_REDIRECT)) return;
+        try{ capPlug('Browser')?.close(); }catch(e){}
+        try{
+          const q = new URL(url.includes('?') ? url : url.replace('#','?'));
+          const errMsg = q.searchParams.get('error_description');
+          if(errMsg) throw new Error(errMsg);
+          const code = q.searchParams.get('code');
+          if(code){ const {error} = await sb.auth.exchangeCodeForSession(code); if(error) throw error; }
+        }catch(e){ showToast('ورود ناموفق: '+String(e?.message||e).slice(0,120)); }
+      });
+    }
+  }catch(e){ console.warn('supabase init',e); renderAccount(); }
 }
 function cloudApply(d){ localStorage.setItem(STORAGE_KEY, JSON.stringify(d)); location.reload(); }
 function cloudPush(now){
-  if(!CU || !cDB) return;
+  if(!CU || !sb) return;
   clearTimeout(cTimer); cTimer=0;
   const go = async()=>{
     cTimer=0;
     try{
       STATE.uid = CU.uid; if(!STATE.mt) STATE.mt = Date.now();
       const js = JSON.stringify(STATE); localStorage.setItem(STORAGE_KEY, js);
-      await cRef().set({data:js, mt:STATE.mt}); cMsg='';
-    }catch(e){ cMsg='⚠️ همگام‌سازی انجام نشد (اینترنت؟)'; }
+      const {error} = await sb.from('user_data').upsert({user_id:CU.uid, data:js, mt:STATE.mt});
+      if(error) throw error;
+      cMsg='';
+    }catch(e){ console.warn('cloudPush',e); cMsg='⚠️ همگام‌سازی انجام نشد (اینترنت؟)'; }
     renderAccount();
   };
   if(now) return go();
   cTimer = setTimeout(go, 1500);
 }
 async function cloudStart(){
-  if(!CU || !cDB || cBusy) return;
+  if(!CU || !sb || cBusy) return;
   cBusy=true;
   try{
     if(cTimer) await cloudPush(true);
-    const snap = await cRef().get(), cl = snap.exists ? snap.data() : null;
+    const {data:cl, error} = await sb.from('user_data').select('data,mt').eq('user_id', CU.uid).maybeSingle();
+    if(error) throw error;
     if(!cl){ STATE.mt=Date.now(); await cloudPush(true); }
     else {
-      const cd = JSON.parse(cl.data), cm = cl.mt||0, lm = STATE.mt||0;
+      const cd = JSON.parse(cl.data), cm = Number(cl.mt)||0, lm = STATE.mt||0;
       if((STATE.uid && STATE.uid!==CU.uid) || !hasData(STATE)){ cBusy=false; return cloudApply(cd); }
       if(!STATE.uid && !hasData(cd)){ STATE.mt=Date.now(); await cloudPush(true); }
       else if(!STATE.uid){
@@ -2944,41 +2969,37 @@ async function cloudStart(){
       else if(lm>cm) await cloudPush(true);
       else cMsg='';
     }
-  }catch(e){ cMsg='⚠️ همگام‌سازی انجام نشد (اینترنت؟)'; }
+  }catch(e){ console.warn('cloudStart',e); cMsg='⚠️ همگام‌سازی انجام نشد (اینترنت؟)'; }
   cBusy=false; renderAccount();
 }
 async function cloudSyncNow(){ await cloudStart(); showToast(cMsg||'همگام شد ✅'); }
-function fbPlug(){
-  try{ if(CAP?.registerPlugin) return CAP.registerPlugin('FirebaseAuthentication'); }catch(e){}
-  return CAP?.Plugins?.FirebaseAuthentication || null;
-}
 async function gLogin(){
-  if(!cAuth){ showToast('سرویس ورود بارگذاری نشد'); return; }
+  if(!sb){ showToast('سرویس ورود تنظیم یا بارگذاری نشده است'); return; }
   try{
     if(isNative()){
-      const FA = fbPlug(); if(!FA) throw new Error('پلاگین ورود پیدا نشد');
-      const r = await FA.signInWithGoogle({skipNativeAuth:true});
-      const t = r?.credential?.idToken; if(!t) throw new Error('no idToken');
-      await cAuth.signInWithCredential(firebase.auth.GoogleAuthProvider.credential(t));
+      const {data, error} = await sb.auth.signInWithOAuth({provider:'google', options:{redirectTo:SB_REDIRECT, skipBrowserRedirect:true, queryParams:{prompt:'select_account'}}});
+      if(error) throw error;
+      const B = capPlug('Browser'); if(!B) throw new Error('پلاگین مرورگر پیدا نشد');
+      await B.open({url:data.url});
     } else {
-      await cAuth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
+      const {error} = await sb.auth.signInWithOAuth({provider:'google', options:{redirectTo:location.origin+location.pathname, queryParams:{prompt:'select_account'}}});
+      if(error) throw error;
     }
   }catch(e){
     const m = String(e?.message||e);
-    if(!/cancel|closed|12501/i.test(m)) showToast('ورود ناموفق: '+m.slice(0,120));
+    if(!/cancel|closed/i.test(m)) showToast('ورود ناموفق: '+m.slice(0,120));
   }
 }
 async function gLogout(){
   if(!confirm('از حساب خارج می‌شوی؟\nاطلاعات در حساب گوگلت می‌ماند و از روی این دستگاه پاک می‌شود.')) return;
   await cloudPush(true);
   if(cMsg && !confirm('آخرین تغییرات هنوز به حساب ارسال نشده و با خروج از بین می‌رود. ادامه می‌دهی؟')) return;
-  try{ if(isNative()) await fbPlug()?.signOut(); }catch(e){}
-  try{ await cAuth.signOut(); }catch(e){}
+  try{ await sb.auth.signOut(); }catch(e){}
   localStorage.removeItem(STORAGE_KEY); sessionStorage.removeItem('gate_skip'); location.reload();
 }
 function renderAccount(){
   const box = document.getElementById('acctBox'); if(!box) return;
-  if(!cAuth){ box.innerHTML='<div class="empty-state" style="padding:14px;">سرویس ورود با گوگل بارگذاری نشده است. این نسخه باید با بیلد اصلی (APK) اجرا شود.</div>'; return; }
+  if(!sb){ box.innerHTML='<div class="empty-state" style="padding:14px;">سرویس ورود با گوگل (Supabase) هنوز تنظیم نشده است. مقدارهای SB_URL و SB_KEY را در کد وارد کن.</div>'; return; }
   box.innerHTML = CU
     ? `<div class="acct-line"><b>${esc(CU.displayName||'حساب گوگل')}</b><small dir="ltr" style="text-align:right">${esc(CU.email||'')}</small><small>${cMsg||'✅ اطلاعات به این حساب لینک است و همگام می‌شود'}</small></div>
        <div class="acct-btns"><button class="btn btn-panel" id="acctSyncBtn">🔄 همگام‌سازی</button><button class="btn btn-rust" id="acctLogoutBtn">خروج از حساب</button></div>`
