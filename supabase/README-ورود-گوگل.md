@@ -2,7 +2,7 @@
 
 1. **Supabase → SQL Editor**: محتوای `schema.sql` را اجرا کن.
 2. **Google Cloud Console → APIs & Services → Credentials → Create OAuth client ID** (نوع *Web application*).
-   - Authorized redirect URI: `https://<PROJECT-REF>.supabase.co/auth/v1/callback`
+   - Authorized redirect URI: `https://rrxxiykwzkwbsdzplact.supabase.co/auth/v1/callback`
    - Client ID و Client Secret را کپی کن.
 3. **Supabase → Authentication → Providers → Google**: فعالش کن و Client ID / Secret را بگذار.
 4. **Supabase → Authentication → URL Configuration → Redirect URLs**: این دو را اضافه کن:
