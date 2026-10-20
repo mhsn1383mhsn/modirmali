@@ -393,6 +393,22 @@ body.theme-light .jcal-trigger{border-color:rgba(30,100,180,.18);}
 .lock-gate{position:fixed;inset:0;z-index:120;display:none;align-items:center;justify-content:center;padding:24px;background:var(--bg-base);}
 .lock-gate.show{display:flex;}
 .lock-box{width:100%;max-width:340px;text-align:center;background:var(--card-bg);border:1px solid var(--card-border);border-radius:18px;padding:22px 18px;box-shadow:var(--shadow-soft);}
+/* صفحهٔ تنظیم رمز داخل اپ */
+.pin-sheet{position:fixed;inset:0;z-index:130;display:none;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.55);padding:0;}
+.pin-sheet.show{display:flex;}
+.pin-sheet-box{width:100%;max-width:420px;background:var(--card-bg);border-radius:22px 22px 0 0;border:1px solid var(--card-border);padding:20px 18px 28px;box-shadow:0 -8px 40px rgba(0,0,0,.35);}
+.pin-sheet-box h3{margin:0 0 6px;font-size:16px;font-weight:900;text-align:center;}
+.pin-sheet-box .hint{margin:0 0 16px;font-size:12px;color:var(--muted);text-align:center;line-height:1.7;}
+.pin-dots{display:flex;justify-content:center;gap:12px;margin:8px 0 20px;min-height:16px;}
+.pin-dots i{width:12px;height:12px;border-radius:50%;border:2px solid var(--muted);display:block;transition:.12s;}
+.pin-dots i.on{background:var(--accent-text,#178BFF);border-color:var(--accent-text,#178BFF);}
+.pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:280px;margin:0 auto;}
+.pin-pad button{height:56px;border-radius:16px;border:1px solid var(--line);background:var(--panel-2);color:var(--paper);font-size:22px;font-weight:800;cursor:pointer;}
+.pin-pad button:active{transform:scale(.96);background:rgba(23,139,255,.12);}
+.pin-pad button.act{font-size:14px;font-weight:700;color:var(--muted);}
+.pin-pad button.ok{color:#fff;background:linear-gradient(135deg,#178BFF,#0B4D8C);border-color:transparent;}
+.pin-sheet-cancel{display:block;width:100%;margin-top:14px;background:transparent;border:none;color:var(--muted);font-size:13px;font-weight:700;padding:10px;cursor:pointer;}
+
 /* ===== login gate (uses same theme tokens) ===== */
 .gate{position:fixed;inset:0;z-index:80;display:none;align-items:center;justify-content:center;padding:24px;
   background:var(--gate-bg);}
@@ -934,6 +950,30 @@ body.theme-light .toast{
     <button class="btn btn-panel btn-full" id="lockBioBtn" style="margin-top:8px;display:none;">اثر انگشت / بیومتریک</button>
   </div>
 </div>
+
+<div class="pin-sheet" id="pinSheet">
+  <div class="pin-sheet-box">
+    <h3 id="pinSheetTitle">تنظیم رمز</h3>
+    <p class="hint" id="pinSheetHint">رمز ۴ تا ۸ رقمی وارد کنید</p>
+    <div class="pin-dots" id="pinDots"></div>
+    <div class="pin-pad" id="pinPad">
+      <button type="button" data-k="1">۱</button>
+      <button type="button" data-k="2">۲</button>
+      <button type="button" data-k="3">۳</button>
+      <button type="button" data-k="4">۴</button>
+      <button type="button" data-k="5">۵</button>
+      <button type="button" data-k="6">۶</button>
+      <button type="button" data-k="7">۷</button>
+      <button type="button" data-k="8">۸</button>
+      <button type="button" data-k="9">۹</button>
+      <button type="button" class="act" data-k="del">⌫</button>
+      <button type="button" data-k="0">۰</button>
+      <button type="button" class="ok" data-k="ok">تأیید</button>
+    </div>
+    <button type="button" class="pin-sheet-cancel" id="pinSheetCancel">انصراف</button>
+  </div>
+</div>
+
 <div class="gate" id="gate">
   <div class="gate-box">
     <div class="brand-mark">₮</div>
@@ -2066,20 +2106,86 @@ async function hashPin(pin){
   for(let i=0;i<s.length;i++) h=((h<<5)-h)+s.charCodeAt(i)|0;
   return 'x'+Math.abs(h);
 }
-async function setAppPin(){
-  const p1 = prompt('رمز ۴ تا ۸ رقمی وارد کنید:');
-  if(p1==null) return;
-  if(!/^\d{4,8}$/.test(p1)){ showToast('رمز باید ۴ تا ۸ رقم باشد'); return; }
-  const p2 = prompt('تکرار رمز:');
-  if(p1!==p2){ showToast('رمزها یکسان نیستند'); return; }
-  if(!STATE.settings) STATE.settings={};
-  STATE.settings.pinHash = await hashPin(p1);
-  saveState(); renderSettings(); showToast('رمز ذخیره شد');
+/* ---- PIN sheet (داخل اپ، بدون prompt کروم) ---- */
+let pinSheetMode='set1', pinSheetBuf='', pinSheetFirst='';
+function getNativeBiometric(){
+  try{
+    if(window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.NativeBiometric) return Capacitor.Plugins.NativeBiometric;
+    if(window.Capacitor && typeof Capacitor.registerPlugin==='function'){
+      return Capacitor.registerPlugin('NativeBiometric');
+    }
+  }catch(e){}
+  return null;
 }
+function renderPinDots(){
+  const el=document.getElementById('pinDots'); if(!el) return;
+  const n=Math.max(4, Math.min(8, pinSheetBuf.length||4));
+  let h='';
+  for(let i=0;i<n;i++) h+='<i class="'+(i<pinSheetBuf.length?'on':'')+'"></i>';
+  // همیشه تا ۸ نقطهٔ حداکثر
+  const show=Math.max(pinSheetBuf.length, 4);
+  el.innerHTML='';
+  for(let i=0;i<8;i++){
+    const d=document.createElement('i');
+    if(i<pinSheetBuf.length) d.className='on';
+    if(i>=show && pinSheetBuf.length<4) { /* keep 4 empty */ }
+    el.appendChild(d);
+    if(i===3 && pinSheetBuf.length<=4) break;
+    if(pinSheetBuf.length>4 && i===pinSheetBuf.length-1) break;
+    if(pinSheetBuf.length>4 && i>=pinSheetBuf.length && i>=4) break;
+  }
+  // ساده: به تعداد ارقام + باقی تا حداقل ۴
+  el.innerHTML='';
+  const total=Math.max(4, pinSheetBuf.length);
+  for(let i=0;i<total && i<8;i++){
+    el.innerHTML+='<i class="'+(i<pinSheetBuf.length?'on':'')+'"></i>';
+  }
+}
+function openPinSheet(mode){
+  pinSheetMode=mode; pinSheetBuf='';
+  const sheet=document.getElementById('pinSheet');
+  const title=document.getElementById('pinSheetTitle');
+  const hint=document.getElementById('pinSheetHint');
+  if(mode==='set1'){ title.textContent='تنظیم رمز'; hint.textContent='رمز ۴ تا ۸ رقمی وارد کنید'; }
+  else if(mode==='set2'){ title.textContent='تکرار رمز'; hint.textContent='همان رمز را دوباره وارد کنید'; }
+  else if(mode==='clear'){ title.textContent='حذف رمز'; hint.textContent='برای تأیید حذف، رمز فعلی را وارد کنید'; }
+  renderPinDots();
+  if(sheet) sheet.classList.add('show');
+}
+function closePinSheet(){
+  const sheet=document.getElementById('pinSheet');
+  if(sheet) sheet.classList.remove('show');
+  pinSheetBuf=''; pinSheetFirst='';
+}
+async function pinSheetSubmit(){
+  if(pinSheetBuf.length<4 || pinSheetBuf.length>8){ showToast('رمز باید ۴ تا ۸ رقم باشد'); return; }
+  if(pinSheetMode==='set1'){
+    pinSheetFirst=pinSheetBuf; pinSheetBuf=''; pinSheetMode='set2';
+    document.getElementById('pinSheetTitle').textContent='تکرار رمز';
+    document.getElementById('pinSheetHint').textContent='همان رمز را دوباره وارد کنید';
+    renderPinDots(); return;
+  }
+  if(pinSheetMode==='set2'){
+    if(pinSheetBuf!==pinSheetFirst){ showToast('رمزها یکسان نیستند'); pinSheetBuf=''; renderPinDots(); return; }
+    if(!STATE.settings) STATE.settings={};
+    STATE.settings.pinHash=await hashPin(pinSheetBuf);
+    saveState(); renderSettings(); closePinSheet(); showToast('رمز ذخیره شد'); return;
+  }
+  if(pinSheetMode==='clear'){
+    const h=await hashPin(pinSheetBuf);
+    if(h!==(STATE.settings&&STATE.settings.pinHash)){ showToast('رمز نادرست است'); pinSheetBuf=''; renderPinDots(); return; }
+    STATE.settings.pinHash=''; STATE.settings.bioLock=false; saveState(); renderSettings(); closePinSheet(); showToast('رمز حذف شد'); return;
+  }
+}
+function onPinPad(k){
+  if(k==='del'){ pinSheetBuf=pinSheetBuf.slice(0,-1); renderPinDots(); return; }
+  if(k==='ok'){ pinSheetSubmit(); return; }
+  if(/^\d$/.test(k) && pinSheetBuf.length<8){ pinSheetBuf+=k; renderPinDots(); }
+}
+async function setAppPin(){ openPinSheet('set1'); }
 async function clearAppPin(){
   if(!STATE.settings || !STATE.settings.pinHash){ showToast('رمزی تنظیم نشده'); return; }
-  if(!confirm('رمز ورود حذف شود؟')) return;
-  STATE.settings.pinHash=''; STATE.settings.bioLock=false; saveState(); renderSettings(); showToast('رمز حذف شد');
+  openPinSheet('clear');
 }
 async function tryUnlockPin(){
   const inp = document.getElementById('lockPinInput');
@@ -2097,15 +2203,33 @@ async function tryUnlockPin(){
 }
 async function tryBioUnlock(){
   try{
-    if(!window.PublicKeyCredential){ showToast('بیومتریک در این دستگاه در دسترس نیست'); return; }
-    // تایید حضور کاربر از طریق WebAuthn platform authenticator در صورت پشتیبانی
-    showToast('اگر اثر انگشت تنظیم شده باشد، از قفل صفحه سیستم استفاده می‌شود');
-    // برای وب ساده: اگر bioLock روشن است و کاربر تعامل کرده، اجازه ورود پس از تایید
-    if(confirm('تأیید هویت بیومتریک / اثر انگشت انجام شد؟')){
-      document.getElementById('lockGate').classList.remove('show');
-      sessionStorage.setItem('mf_unlocked','1');
+    const NB = getNativeBiometric();
+    if(!NB){
+      showToast('بیومتریک فقط در نسخهٔ اندروید (APK) کار می‌کند');
+      return;
     }
-  }catch(e){ showToast('بیومتریک در دسترس نیست'); }
+    let avail=null;
+    try{ avail = await NB.isAvailable(); }catch(e){ avail=null; }
+    if(avail && avail.isAvailable===false){
+      showToast('اثر انگشت / بیومتریک روی این دستگاه فعال نیست');
+      return;
+    }
+    await NB.verifyIdentity({
+      reason: 'برای ورود به مدیریت مالی',
+      title: 'تأیید هویت',
+      subtitle: 'از اثر انگشت یا قفل صفحه استفاده کنید',
+      description: 'هویت خود را تأیید کنید',
+      negativeButtonText: 'انصراف',
+      maxAttempts: 5,
+      useFallback: true
+    });
+    document.getElementById('lockGate').classList.remove('show');
+    sessionStorage.setItem('mf_unlocked','1');
+  }catch(e){
+    const msg=String((e&&(e.message||e.errorMessage))||e||'');
+    if(/cancel|user.?cancel|denied|10|13/i.test(msg)) return;
+    showToast('بیومتریک ناموفق: '+msg.slice(0,120));
+  }
 }
 function showLockIfNeeded(){
   const hasPin = !!(STATE.settings && STATE.settings.pinHash);
@@ -3140,6 +3264,9 @@ document.addEventListener('click', function(e){
     return;
   }
   if(t.id==='setPinBtn'){ setAppPin(); return; }
+  if(t.id==='pinSheetCancel'){ closePinSheet(); return; }
+  const pinKey = t.closest && t.closest('#pinPad button[data-k]');
+  if(pinKey){ onPinPad(pinKey.getAttribute('data-k')); return; }
   if(t.id==='remRequestPermBtn'){ requestNotificationPermission().then(ok=>{ if(ok){ scheduleAllReminders(); showToast('اجازه اعلان دریافت شد'); } else showToast('اجازه اعلان داده نشد'); }); return; }
   if(t.id==='remRescheduleBtn'){ scheduleAllReminders().then(()=> showToast('اعلان‌ها زمان‌بندی شد')); return; }
   if(t.id==='clearPinBtn'){ clearAppPin(); return; }
@@ -3438,6 +3565,20 @@ document.addEventListener('change',function(e){
   if(t.id==='bioLockToggle'){
     if(!STATE.settings) STATE.settings={};
     if(t.checked && !STATE.settings.pinHash){ t.checked=false; showToast('اول رمز ورود را تنظیم کنید'); return; }
+    if(t.checked){
+      (async()=>{
+        const NB=getNativeBiometric();
+        if(!NB){ t.checked=false; showToast('بیومتریک فقط روی APK اندروید در دسترس است'); return; }
+        try{
+          const a=await NB.isAvailable();
+          if(a && a.isAvailable===false){ t.checked=false; showToast('اثر انگشت روی این دستگاه تنظیم نشده'); return; }
+          await NB.verifyIdentity({reason:'فعال‌سازی ورود بیومتریک',title:'تأیید هویت',subtitle:'',description:'',negativeButtonText:'انصراف',useFallback:true});
+          STATE.settings.bioLock=true; saveState(); showToast('بیومتریک فعال شد');
+        }catch(e){ t.checked=false; const msg=String((e&&e.message)||e||''); if(!/cancel/i.test(msg)) showToast('فعال‌سازی بیومتریک انجام نشد'); }
+      })();
+      return;
+    }
+    STATE.settings.bioLock=false; saveState(); showToast('بیومتریک خاموش شد'); return; }
     STATE.settings.bioLock = !!t.checked; saveState(); showToast(t.checked?'بیومتریک فعال شد':'بیومتریک خاموش شد'); return;
   }
   if(t.id==='remDailyToggle' || t.id==='dailyReminderToggle'){
