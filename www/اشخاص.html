@@ -3501,7 +3501,30 @@ function cloudInit(){
     }
   }catch(e){ console.warn('supabase init',e); cReady=true; renderAccount(); }
 }
-function cloudApply(d){ localStorage.setItem(STORAGE_KEY, JSON.stringify(d)); location.reload(); }
+function cloudApply(d, serverMt){
+  // بدون location.reload تا حلقه رفرش بعد از لاگین پیش نیاید
+  try{
+    d = d || {};
+    if(CU) d.uid = CU.uid;
+    var mt = Number(serverMt);
+    if(!mt || !isFinite(mt)) mt = Number(d.mt) || Date.now();
+    d.mt = mt;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(d));
+    try{ sessionStorage.setItem('cloud_applied_mt_'+(CU&&CU.uid||''), String(mt)); }catch(e){}
+    STATE = loadState();
+    STATE.uid = CU ? CU.uid : STATE.uid;
+    STATE.mt = mt;
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(STATE)); }catch(e){}
+    applyTheme();
+    if(typeof renderAll==='function') renderAll();
+    hideGate();
+    cMsg = '';
+    renderAccount();
+  }catch(e){
+    console.warn('cloudApply', e);
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(d)); }catch(x){}
+  }
+}
 function cloudPush(now){
   if(!CU||!sb) return;
   clearTimeout(cTimer); cTimer=0;
@@ -3513,6 +3536,7 @@ function cloudPush(now){
       const {error} = await sb.from('user_data').upsert({user_id:CU.uid, data:js, mt:STATE.mt});
       if(error) throw error;
       cMsg='';
+      try{ sessionStorage.setItem('cloud_applied_mt_'+CU.uid, String(STATE.mt)); }catch(e){}
     }catch(e){ console.warn('cloudPush',e); cMsg='⚠️ همگام‌سازی انجام نشد (اینترنت؟)'; }
     renderAccount();
   };
@@ -3527,14 +3551,20 @@ async function cloudStart(){
     if(error) throw error;
     if(!cl){ STATE.mt=Date.now(); await cloudPush(true); }
     else{
-      const cd=JSON.parse(cl.data), cm=Number(cl.mt)||0, lm=STATE.mt||0;
-      if((STATE.uid && STATE.uid!==CU.uid) || !hasData(STATE)){ cBusy=false; return cloudApply(cd); }
+      const cd=JSON.parse(cl.data);
+      // mt ستون و mt داخل JSON را هماهنگ کن تا حلقه رفرش نشود
+      const cm=Math.max(Number(cl.mt)||0, Number(cd && cd.mt)||0);
+      const lm=Number(STATE.mt)||0;
+      let lastApplied=0;
+      try{ lastApplied=Number(sessionStorage.getItem('cloud_applied_mt_'+CU.uid))||0; }catch(e){}
+      if(cm && cm===lastApplied && cm>=lm){ cMsg=''; cBusy=false; renderAccount(); return; }
+      if((STATE.uid && STATE.uid!==CU.uid) || !hasData(STATE)){ cBusy=false; return cloudApply(cd, cm); }
       if(!STATE.uid && !hasData(cd)){ STATE.mt=Date.now(); await cloudPush(true); }
       else if(!STATE.uid){
-        if(confirm('این حساب از قبل اطلاعات دارد.\n\nتأیید = اطلاعات حساب روی این دستگاه بارگذاری شود (اطلاعات فعلی دستگاه جایگزین می‌شود)\nانصراف = اطلاعات فعلی دستگاه جایگزین اطلاعات حساب شود')){ cBusy=false; return cloudApply(cd); }
+        if(confirm('این حساب از قبل اطلاعات دارد.\n\nتأیید = اطلاعات حساب روی این دستگاه بارگذاری شود (اطلاعات فعلی دستگاه جایگزین می‌شود)\nانصراف = اطلاعات فعلی دستگاه جایگزین اطلاعات حساب شود')){ cBusy=false; return cloudApply(cd, cm); }
         STATE.mt=Date.now(); await cloudPush(true);
       }
-      else if(cm>lm){ cBusy=false; return cloudApply(cd); }
+      else if(cm>lm){ cBusy=false; return cloudApply(cd, cm); }
       else if(lm>cm){ await cloudPush(true); }
       else{ cMsg=''; }
     }
