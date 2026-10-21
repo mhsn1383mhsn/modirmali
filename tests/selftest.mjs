@@ -33,10 +33,10 @@ const code = [
   const map = monthExpenseByCategory();
   eq(map['خوراک'], 1500, 'تفکیک دسته');
   eq(map['حقوق'], undefined, 'درآمد در تفکیک هزینه نیست');
-  eq(jalaliMonthDays(1404,7), 31, 'مهر ۳۱ روز');
+  eq(jalaliMonthDays(1404,7), 30, 'مهر ۳۰ روز');
   eq(jalaliMonthDays(1403,12), 30, 'اسفند ۱۴۰۳ کبیسه (۳۰ روز)');
   eq(jalaliMonthDays(1404,12), 29, 'اسفند ۱۴۰۴ (۲۹ روز)');
-  eq(budgetDaysLeft(), 13, 'روزهای باقی‌مانده ماه (۱۹ مهر → ۱۳ روز)');
+  eq(budgetDaysLeft(), 12, 'روزهای باقی‌مانده ماه (۱۹ مهر از ۳۰ → ۱۲ روز)');
   console.log('selftest: همه بررسی‌های مالی درست بود ✅');
   `
 ].join('\n');
