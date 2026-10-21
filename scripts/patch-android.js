@@ -1,8 +1,5 @@
-// Android patches: debug signing, deep link for Supabase OAuth, custom icons
 const fs = require('fs'), path = require('path');
 const root = path.join(__dirname, '..');
-
-// Stable debug signing so new APKs install over old ones
 const gradlePath = path.join(root, 'android', 'app', 'build.gradle');
 if (fs.existsSync(gradlePath)) {
   let gradle = fs.readFileSync(gradlePath, 'utf8');
@@ -23,8 +20,6 @@ if (fs.existsSync(gradlePath)) {
     fs.writeFileSync(gradlePath, gradle);
   }
 }
-
-// Deep link so Google login (Supabase OAuth) can return to the app
 const manifestPath = path.join(root, 'android', 'app', 'src', 'main', 'AndroidManifest.xml');
 if (fs.existsSync(manifestPath)) {
   let manifest = fs.readFileSync(manifestPath, 'utf8');
@@ -40,38 +35,23 @@ if (fs.existsSync(manifestPath)) {
     fs.writeFileSync(manifestPath, manifest);
   }
 }
-
-// Custom app icons from branding/android
 const brandingAndroid = path.join(root, 'branding', 'android');
 const resDir = path.join(root, 'android', 'app', 'src', 'main', 'res');
 if (fs.existsSync(brandingAndroid) && fs.existsSync(resDir)) {
-  const dens = ['mdpi', 'hdpi', 'xhdpi', 'xxhdpi', 'xxxhdpi'];
-  for (const d of dens) {
+  for (const d of ['mdpi','hdpi','xhdpi','xxhdpi','xxxhdpi']) {
     const from = path.join(brandingAndroid, 'mipmap-' + d);
     const to = path.join(resDir, 'mipmap-' + d);
     if (!fs.existsSync(from)) continue;
     fs.mkdirSync(to, { recursive: true });
-    for (const f of fs.readdirSync(from)) {
-      fs.copyFileSync(path.join(from, f), path.join(to, f));
-    }
+    for (const f of fs.readdirSync(from)) fs.copyFileSync(path.join(from, f), path.join(to, f));
   }
-  const anyFrom = path.join(brandingAndroid, 'mipmap-anydpi-v26');
-  const anyTo = path.join(resDir, 'mipmap-anydpi-v26');
-  if (fs.existsSync(anyFrom)) {
-    fs.mkdirSync(anyTo, { recursive: true });
-    for (const f of fs.readdirSync(anyFrom)) {
-      fs.copyFileSync(path.join(anyFrom, f), path.join(anyTo, f));
-    }
-  }
-  const drFrom = path.join(brandingAndroid, 'drawable');
-  const drTo = path.join(resDir, 'drawable');
-  if (fs.existsSync(drFrom)) {
-    fs.mkdirSync(drTo, { recursive: true });
-    for (const f of fs.readdirSync(drFrom)) {
-      fs.copyFileSync(path.join(drFrom, f), path.join(drTo, f));
-    }
+  for (const [sub] of [['mipmap-anydpi-v26'],['drawable']]) {
+    const from = path.join(brandingAndroid, sub);
+    const to = path.join(resDir, sub);
+    if (!fs.existsSync(from)) continue;
+    fs.mkdirSync(to, { recursive: true });
+    for (const f of fs.readdirSync(from)) fs.copyFileSync(path.join(from, f), path.join(to, f));
   }
   console.log('patch-android: custom icons applied');
 }
-
 console.log('patch-android: OK');

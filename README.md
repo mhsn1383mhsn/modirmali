@@ -4,8 +4,8 @@ www/                  خود برنامه (وب)
   index.html          نسخه کامل با نوار تب
   داشبورد.html صندوق.html ثروت.html اقساط.html اشخاص.html چک‌ها.html   (هر فایل = یک بخش)
   manifest.json، آیکون‌ها
-supabase/             اسکریپت SQL جدول + راهنمای ورود گوگل
-scripts/              اسکریپت‌های ساخت (کپی Supabase SDK، امضای APK)
+firebase/             تنظیمات Firebase (google-services.json)
+scripts/              اسکریپت‌های ساخت (کپی Firebase SDK، امضای APK)
 keystore/             کلید امضای ثابت
 assets/               آیکون اصلی برنامه
 .github/workflows/    ساخت خودکار APK در GitHub
