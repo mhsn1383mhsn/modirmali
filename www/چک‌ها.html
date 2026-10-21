@@ -1510,10 +1510,9 @@ function expenseFundOptions(){
 }
 /** پس از ثبت درآمد: مبلغ را از صندوق درآمدی بر اساس درصد به هزینه‌ای‌ها و زیرمجموعه‌ها منتقل می‌کند */
 function autoAllocateIncome(amount, d, fromFundId, noteBase){
+  const refs = [];
   const tops = topExpenseFunds();
-  if(!(amount>0) || !tops.length) return;
-  // صندوق درآمدی صفر نمی‌شود: فقط مجموع درآمد (ورود) نگه داشته می‌شود؛
-  // تخصیص فقط روی صندوق‌های هزینه‌ای ثبت می‌شود.
+  if(!(amount>0) || !tops.length) return refs;
   tops.forEach(parent=>{
     const share = amount * ((Number(parent.percent)||0)/100);
     if(share <= 0) return;
@@ -1523,19 +1522,25 @@ function autoAllocateIncome(amount, d, fromFundId, noteBase){
         const chShare = share * ((Number(ch.percent)||0)/100);
         if(chShare > 0){
           ch.entries = ch.entries || [];
-          ch.entries.push({id:uid(), jy:d.jy, jm:d.jm, jd:d.jd, in:chShare, out:0, note:(noteBase||('تخصیص خودکار از «'+(parent.name||'')+'»'))});
+          const ce = {id:uid(), jy:d.jy, jm:d.jm, jd:d.jd, in:chShare, out:0, note:(noteBase||('تخصیص خودکار از «'+(parent.name||'')+'»'))};
+          ch.entries.push(ce);
+          refs.push({fundId:ch.id, entryId:ce.id});
         }
       });
     } else {
       parent.entries = parent.entries || [];
-      parent.entries.push({id:uid(), jy:d.jy, jm:d.jm, jd:d.jd, in:share, out:0, note:(noteBase||'تخصیص خودکار از درآمد')});
+      const pe = {id:uid(), jy:d.jy, jm:d.jm, jd:d.jd, in:share, out:0, note:(noteBase||'تخصیص خودکار از درآمد')};
+      parent.entries.push(pe);
+      refs.push({fundId:parent.id, entryId:pe.id});
     }
   });
+  return refs;
 }
-/** معکوس تخصیص: هنگام هزینه از صندوق درآمدی، همان درصدها از صندوق‌های هزینه‌ای کسر می‌شود */
+/** معکوس تخصیص: هزینه از صندوق درآمدی → همان درصدها از هزینه‌ای‌ها کسر می‌شود (با refs برای حذف بعدی) */
 function autoDeallocateExpense(amount, d, fromFundId, noteBase){
+  const refs = [];
   const tops = topExpenseFunds();
-  if(!(amount>0) || !tops.length) return;
+  if(!(amount>0) || !tops.length) return refs;
   const note = noteBase || 'برگشت تخصیص به‌خاطر هزینه از صندوق درآمدی';
   tops.forEach(parent=>{
     const share = amount * ((Number(parent.percent)||0)/100);
@@ -1546,14 +1551,19 @@ function autoDeallocateExpense(amount, d, fromFundId, noteBase){
         const chShare = share * ((Number(ch.percent)||0)/100);
         if(chShare > 0){
           ch.entries = ch.entries || [];
-          ch.entries.push({id:uid(), jy:d.jy, jm:d.jm, jd:d.jd, in:0, out:chShare, note:note+' · «'+(parent.name||'')+'»'});
+          const ce = {id:uid(), jy:d.jy, jm:d.jm, jd:d.jd, in:0, out:chShare, note:note+' · «'+(parent.name||'')+'»'};
+          ch.entries.push(ce);
+          refs.push({fundId:ch.id, entryId:ce.id});
         }
       });
     } else {
       parent.entries = parent.entries || [];
-      parent.entries.push({id:uid(), jy:d.jy, jm:d.jm, jd:d.jd, in:0, out:share, note:note});
+      const pe = {id:uid(), jy:d.jy, jm:d.jm, jd:d.jd, in:0, out:share, note:note};
+      parent.entries.push(pe);
+      refs.push({fundId:parent.id, entryId:pe.id});
     }
   });
+  return refs;
 }
 
 function ensureDefaultFunds(){
@@ -1609,7 +1619,7 @@ function catRunning(cat){
 }
 function catBalance(cat){ return (cat.entries||[]).reduce((s,e)=> s+(e.in||0)-(e.out||0), 0); }
 function wealthTotal(){ return (STATE.funds||[]).filter(isExpenseFund).reduce((s,f)=> s+fundBalance(f), 0); }
-function wealthPercentSum(){ return STATE.wealthCategories.reduce((s,c)=> s+(c.percent||0), 0); }
+function wealthPercentSum(){ return (STATE.wealthCategories||[]).reduce((s,c)=> s+(c.percent||0), 0); }
 
 function loanRunning(loan){
   let run = loan.startBalance||0; const rows=[];
@@ -1685,9 +1695,9 @@ function addIncomeFundMovement(fundId, dir){
       STATE.transactions.push(tx);
       // درآمد: تخصیص درصدی / هزینه: برگشت همان درصدها از صندوق‌های هزینه‌ای
       if(isIn){
-        try{ autoAllocateIncome(amount, d, f.id, 'تخصیص از درآمد صندوق «'+(f.name||'')+'»'); }catch(e){ console.warn(e); }
+        try{ tx.allocRefs = autoAllocateIncome(amount, d, f.id, 'تخصیص از درآمد صندوق «'+(f.name||'')+'»'); }catch(e){ console.warn(e); }
       } else {
-        try{ autoDeallocateExpense(amount, d, f.id, 'برگشت تخصیص به‌خاطر هزینه از «'+(f.name||'')+'»'); }catch(e){ console.warn(e); }
+        try{ tx.allocRefs = autoDeallocateExpense(amount, d, f.id, 'برگشت تخصیص به‌خاطر هزینه از «'+(f.name||'')+'»'); }catch(e){ console.warn(e); }
       }
       saveState();
       renderFunds(); renderCashflow(); renderDashboard();
@@ -1695,15 +1705,22 @@ function addIncomeFundMovement(fundId, dir){
     }
   );
 }
-function linkFundEntry(fund, dir, amount, jd, jm, note){
-  const e={id:uid(), jm, jd, in:dir==='in'?amount:0, out:dir==='out'?amount:0, note:note||''};
+function linkFundEntry(fund, dir, amount, jd, jm, note, jy){
+  const e={id:uid(), jy, jm, jd, in:dir==='in'?amount:0, out:dir==='out'?amount:0, note:note||''};
+  fund.entries = fund.entries || [];
   fund.entries.push(e); return e.id;
 }
 function removeLinkedFundEntries(tx){
   [[tx.fundId,tx.fundEntryId],[tx.toFundId,tx.toFundEntryId]].forEach(([fid,eid])=>{
     const f=findFund(fid);
-    if(f&&eid) f.entries=f.entries.filter(e=>e.id!==eid);
+    if(f&&eid) f.entries=(f.entries||[]).filter(e=>e.id!==eid);
   });
+  // برگشت تخصیص‌های درصدی مرتبط با این تراکنش
+  (tx.allocRefs||[]).forEach(r=>{
+    const f=findFund(r.fundId);
+    if(f) f.entries=(f.entries||[]).filter(e=>e.id!==r.entryId);
+  });
+  tx.allocRefs=[];
   tx.fundEntryId=null; tx.toFundEntryId=null;
 }
 function parseTxDate(str){
@@ -2569,7 +2586,7 @@ function addMultiFundExpense(){
         createdAt: Date.now(), multiGroup: groupId,
         fundId: sp.fund.id
       };
-      tx.fundEntryId = linkFundEntry(sp.fund, 'out', sp.amount, d.jd, d.jm, note || 'هزینه چندصندوقی');
+      tx.fundEntryId = linkFundEntry(sp.fund, 'out', sp.amount, d.jd, d.jm, note || 'هزینه چندصندوقی', d.jy);
       STATE.transactions.push(tx);
     });
     saveState();
@@ -2634,11 +2651,11 @@ function addIncomeExpense(type){
       if(f){
         tx.fundId = f.id;
         const noteBits = [cat, tx.note].filter(Boolean).join(' — ');
-        tx.fundEntryId = linkFundEntry(f, isIn?'in':'out', amount, d.jd, d.jm, noteBits || (isIn?'درآمد':'هزینه'));
+        tx.fundEntryId = linkFundEntry(f, isIn?'in':'out', amount, d.jd, d.jm, noteBits || (isIn?'درآمد':'هزینه', d.jy));
       }
       STATE.transactions.push(tx);
       if(isIn && f){
-        autoAllocateIncome(amount, d, f.id, 'تخصیص خودکار درآمد'+(cat?(' · '+cat):''));
+        tx.allocRefs = autoAllocateIncome(amount, d, f.id, 'تخصیص خودکار درآمد'+(cat?(' · '+cat):''));
       }
       saveState();
       renderCashflow(); renderFunds();
@@ -2700,8 +2717,8 @@ function editTransaction(id){
       tx.note = (out.note||'').trim();
       if(isTransfer){
         tx.fundId = from.id; tx.toFundId = to.id;
-        tx.fundEntryId = linkFundEntry(from,'out',amount,d.jd,d.jm,'انتقال به '+to.name);
-        tx.toFundEntryId = linkFundEntry(to,'in',amount,d.jd,d.jm,'انتقال از '+from.name);
+        tx.fundEntryId = linkFundEntry(from, 'out', amount, d.jd, d.jm, 'انتقال به '+to.name, d.jy);
+        tx.toFundEntryId = linkFundEntry(to, 'in', amount, d.jd, d.jm, 'انتقال از '+from.name, d.jy);
       }else{
         let cat = (out.category||'').trim() || tx.category;
         addCategory(isIn?'income':'expense', cat);
@@ -2709,7 +2726,7 @@ function editTransaction(id){
         const f = findFund(fundOpts.length ? out.fund : tx.fundId);
         if(f){
           tx.fundId = f.id;
-          tx.fundEntryId = linkFundEntry(f, isIn?'in':'out', amount, d.jd, d.jm, tx.category+(tx.note?' — '+tx.note:''));
+          tx.fundEntryId = linkFundEntry(f, isIn?'in':'out', amount, d.jd, d.jm, tx.category+(tx.note?' — '+tx.note:'', d.jy));
         }else{ tx.fundId=null; tx.fundEntryId=null; }
       }
       saveState();
@@ -2921,16 +2938,11 @@ function notifNumericId(seed){
   return (Math.abs(h) % 2000000000) + 1000;
 }
 function jalaliToDateObj(jy,jm,jd,hour=9,minute=0){
-  // تقریب سپس اصلاح با toJalali
-  let d = new Date(jy + 621, Math.max(0, jm - 1), Math.max(1, jd), hour, minute, 0, 0);
-  for(let i=0;i<6;i++){
-    const j = toJalali(d.getFullYear(), d.getMonth()+1, d.getDate());
-    const delta = (jy - j.jy) * 365 + (jm - j.jm) * 30 + (jd - j.jd);
-    if(delta === 0) break;
-    d = new Date(d.getTime() + delta * 86400000);
-  }
-  d.setHours(hour, minute, 0, 0);
-  return d;
+  // تبدیل دقیق: روز اول فروردین همان سال میلادی + تعداد روزهای سپری‌شده
+  const gy = jy + 621;
+  const r = jalCalLeap(jy);
+  const k = jm <= 6 ? (jm-1)*31 + (jd-1) : 186 + (jm-7)*30 + (jd-1);
+  return new Date(gy, 2, r.march + k, hour, minute, 0, 0);
 }
 function ensureReminderSettings(){
   if(!STATE.settings) STATE.settings = {};
@@ -4168,8 +4180,8 @@ if(t.id==='addMultiExpenseBtn'){ addMultiFundExpense(); return; }
     ], 'افزودن وام', (vals)=>{
       if(!vals.name){ setFieldError('name','نام وام را وارد کنید'); return false; }
       if(!(vals.monthly>0)){ setFieldError('monthly','مبلغ قسط را وارد کنید'); return false; }
-      const months = Math.max(1, parseInt(vals.months,10)||0);
-      if(!months){ setFieldError('months','تعداد ماه را وارد کنید'); return false; }
+      const months = parseInt(vals.months,10)||0;
+      if(!months || months < 1){ setFieldError('months','تعداد ماه را وارد کنید'); return false; }
       const start = vals.date || todayJalali();
       const schedule = buildLoanSchedule(start, months, vals.monthly);
       const total = (vals.startBalance>0) ? vals.startBalance : (vals.monthly * months);
@@ -4232,6 +4244,13 @@ if(t.id==='addMultiExpenseBtn'){ addMultiFundExpense(); return; }
   const rmPerson = t.closest('[data-remove-person]');
   if(rmPerson){
     if(confirm('این شخص کاملاً حذف شود؟')){
+      const gone = STATE.persons.find(p=>p.id===rmPerson.getAttribute('data-remove-person'));
+      ((gone && gone.entries)||[]).forEach(en=>{
+        if(en.fundId && en.fundEntryId){
+          const ff=findFund(en.fundId);
+          if(ff) ff.entries=(ff.entries||[]).filter(x=>x.id!==en.fundEntryId);
+        }
+      });
       STATE.persons = STATE.persons.filter(p=>p.id!==rmPerson.getAttribute('data-remove-person'));
       saveState(); renderPersons(); renderDashboard();
     }
@@ -4270,7 +4289,7 @@ if(t.id==='addMultiExpenseBtn'){ addMultiFundExpense(); return; }
       if(f && preferType==='income' && !isIncomeFund(f)){ setFieldError('fund','برای این حرکت صندوق درآمدی انتخاب کنید'); return false; }
       const entry = {id:uid(), jy:d.jy, jm:d.jm, jd:d.jd, service, received, paid, borrowed, kind, note:vals.note||'', fundId:f?f.id:null, fundEntryId:null};
       if(f && fundDir){
-        entry.fundEntryId = linkFundEntry(f, fundDir, amount, d.jd, d.jm, (p.name||'شخص')+' · '+(vals.note||kind));
+        entry.fundEntryId = linkFundEntry(f, fundDir, amount, d.jd, d.jm, (p.name||'شخص', d.jy)+' · '+(vals.note||kind));
       }
       p.entries = p.entries||[];
       p.entries.push(entry);
