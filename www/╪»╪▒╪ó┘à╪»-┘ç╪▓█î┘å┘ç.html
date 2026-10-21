@@ -831,6 +831,35 @@ body.theme-light .toast{
 .btn-percent-manager-child{background:linear-gradient(135deg,rgba(27,156,168,.15),rgba(35,117,230,.09))!important;border-color:rgba(50,183,190,.35)!important}
 .btn-percent-manager-child .pct-manager-icon{background:linear-gradient(145deg,#0891b2,#2563eb)}
 @media(max-width:480px){.btn-percent-manager{min-height:40px;padding:7px 10px!important;gap:7px;font-size:11px!important}.pct-manager-icon{width:23px;height:23px;flex-basis:23px}}
+
+/* Modern Android-style loan cards and person actions */
+#loanList{display:grid;gap:14px;margin-top:14px}
+#loanList .ent-card[data-loan-card]{border:1px solid color-mix(in srgb,var(--line) 72%,#6d8cff 28%);border-radius:22px;padding:16px;background:linear-gradient(145deg,color-mix(in srgb,var(--panel) 92%,#4568c9 8%),var(--panel));box-shadow:0 8px 24px #00000014;overflow:hidden}
+#loanList .ent-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+#loanList .eh-name{font-size:16px;font-weight:900;letter-spacing:-.2px}
+#loanList .eh-badge{border-radius:999px;padding:7px 10px;font-size:11px;font-weight:800;white-space:nowrap}
+#loanList .ent-meta[data-toggle-ent]{background:color-mix(in srgb,var(--line) 30%,transparent);border-radius:12px;padding:10px 12px;margin:0 0 14px;font-size:12px;line-height:1.7}
+#loanList .name-edit-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;margin-bottom:12px}
+#loanList input[data-loan-name],#loanList input[data-loan-start],#loanList input[data-loan-monthly]{width:100%;min-width:0;box-sizing:border-box;border:1px solid var(--line);border-radius:13px;padding:12px;background:color-mix(in srgb,var(--panel) 84%,#8296c8 16%);color:var(--paper);font:inherit;font-size:14px;outline:none}
+#loanList input:focus{border-color:#6388ff;box-shadow:0 0 0 3px #6388ff22}
+#loanList .mini-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0 14px}
+#loanList .mini-stats>div{background:color-mix(in srgb,var(--line) 24%,transparent);padding:12px;border-radius:15px;min-width:0}
+#loanList .mini-stats label{font-size:11px!important;font-weight:800;margin-bottom:8px!important}
+#loanList .entry-list{display:grid;gap:8px}
+#loanList .entry-row{border-radius:13px;padding:10px;background:color-mix(in srgb,var(--line) 20%,transparent);gap:8px}
+#loanList .add-inline-btn{width:100%;border-radius:14px;padding:13px;margin-top:12px;font-weight:850;background:linear-gradient(120deg,#4169e1,#6c5ce7);color:#fff;border:0}
+.person-action-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:12px}
+.person-action-btn{display:flex;align-items:center;gap:10px;text-align:right;min-height:72px;padding:12px;border:1px solid var(--line);border-radius:17px;background:color-mix(in srgb,var(--panel) 88%,#7187bb 12%);color:var(--paper);font:inherit;cursor:pointer;box-shadow:0 4px 12px #0000000b;transition:transform .15s,border-color .15s}
+.person-action-btn:active{transform:scale(.98)}
+.person-action-btn .pa-icon{width:38px;height:38px;flex:0 0 38px;border-radius:12px;display:grid;place-items:center;font-size:19px;font-weight:900}
+.person-action-btn .pa-title{display:block;font-size:12px;font-weight:900;line-height:1.6}
+.person-action-btn .pa-sub{display:block;font-size:10px;color:var(--muted);margin-top:2px;line-height:1.5}
+.person-action-btn[data-person-action="service"] .pa-icon{background:#2563eb20;color:#60a5fa}
+.person-action-btn[data-person-action="received"] .pa-icon{background:#16a34a20;color:#4ade80}
+.person-action-btn[data-person-action="pay"] .pa-icon{background:#7c3aed20;color:#a78bfa}
+.person-action-btn[data-person-action="borrow"] .pa-icon{background:#d9770620;color:#fbbf24}
+@media(max-width:360px){.person-action-grid{gap:7px}.person-action-btn{padding:9px;gap:7px}.person-action-btn .pa-icon{width:32px;height:32px;flex-basis:32px}}
+
 </style>
 <style id="focus-mode">
   .view:not([data-view="cashflow"]){display:none!important;}
@@ -2157,9 +2186,11 @@ function renderLoans(){
         </div>
         <div class="mini-stats">
           <div><label style="font-size:10px;color:var(--muted);display:block;margin-bottom:4px;">مانده اولیه</label>
-            <input type="number" class="num-in" style="width:100%;" data-loan-start="${l.id}" value="${l.startBalance||0}"></div>
+            <input type="text" inputmode="numeric" autocomplete="off" class="num-in" style="width:100%;" data-loan-start="${l.id}" value="${fmtMoney(l.startBalance||0)}">
+            <div class="loan-money-words" data-loan-start-words="${l.id}" style="font-size:11px;color:var(--muted);margin:5px 3px 0;line-height:1.7;min-height:18px;">${(l.startBalance||0)?moneyWords(l.startBalance):''}</div></div>
           <div><label style="font-size:10px;color:var(--muted);display:block;margin-bottom:4px;">قسط ماهانه</label>
-            <input type="number" class="num-in" style="width:100%;" data-loan-monthly="${l.id}" value="${l.monthly||0}"></div>
+            <input type="text" inputmode="numeric" autocomplete="off" class="num-in" style="width:100%;" data-loan-monthly="${l.id}" value="${fmtMoney(l.monthly||0)}">
+            <div class="loan-money-words" data-loan-monthly-words="${l.id}" style="font-size:11px;color:var(--muted);margin:5px 3px 0;line-height:1.7;min-height:18px;">${(l.monthly||0)?moneyWords(l.monthly):''}</div></div>
         </div>
         <div class="entry-list">
           ${rows.length ? rows.map(r=>`<div class="entry-row">
@@ -2175,6 +2206,7 @@ function renderLoans(){
       </div>
     </div>`;
   }).join('');
+  wrap.querySelectorAll('[data-loan-start],[data-loan-monthly]').forEach(inp=>{ try{ attachMoneyInput(inp, null); }catch(e){} });
 }
 
 /* ============== render: persons ============== */
@@ -2231,7 +2263,12 @@ function renderPersons(){
           </div>`;
           }).join('') : '<div class="empty-state" style="padding:14px;">تراکنشی ثبت نشده.</div>'}
         </div>
-        <button class="add-inline-btn" data-add-person-entry="${p.id}">➕ ثبت تراکنش جدید</button>
+        <div class="person-action-grid" aria-label="عملیات مالی شخص">
+          <button type="button" class="person-action-btn" data-person-action="service" data-person-id="${p.id}"><span class="pa-icon">＋</span><span><span class="pa-title">ایجاد طلب</span><span class="pa-sub">شخص به ما بدهکار می‌شود</span></span></button>
+          <button type="button" class="person-action-btn" data-person-action="received" data-person-id="${p.id}"><span class="pa-icon">↓</span><span><span class="pa-title">پرداخت طلب</span><span class="pa-sub">دریافت از شخص</span></span></button>
+          <button type="button" class="person-action-btn" data-person-action="pay" data-person-id="${p.id}"><span class="pa-icon">↗</span><span><span class="pa-title">پرداخت بدهی</span><span class="pa-sub">پرداخت ما به شخص</span></span></button>
+          <button type="button" class="person-action-btn" data-person-action="borrow" data-person-id="${p.id}"><span class="pa-icon">✓</span><span><span class="pa-title">ایجاد بدهی</span><span class="pa-sub">شخص به ما پول می‌دهد</span></span></button>
+        </div>
       </div>
     </div>`;
   }).join('');
@@ -4424,20 +4461,17 @@ if(t.id==='addMultiExpenseBtn'){ addMultiFundExpense(); return; }
     }
     return;
   }
-  const addPersonEntryBtn = t.closest('[data-add-person-entry]');
+  const addPersonEntryBtn = t.closest('[data-add-person-entry], [data-person-action]');
   if(addPersonEntryBtn){
-    const pid = addPersonEntryBtn.getAttribute('data-add-person-entry');
+    const isActionButton = addPersonEntryBtn.hasAttribute('data-person-action');
+    const pid = isActionButton ? addPersonEntryBtn.getAttribute('data-person-id') : addPersonEntryBtn.getAttribute('data-add-person-entry');
+    const chosenKind = isActionButton ? addPersonEntryBtn.getAttribute('data-person-action') : '';
+    const actionTitles = {service:'ایجاد طلب', received:'پرداخت طلب', pay:'پرداخت بدهی', borrow:'ایجاد بدهی'};
     ensureDefaultFunds();
     const expOpts = expenseFundOptions();
     const incOpts = incomeFundOptions();
-    openFormSheet('ثبت تراکنش شخص', 'بدهی/خدمت و پرداخت ما ← صندوق هزینه‌ای · دریافت از شخص ← صندوق درآمدی', [
+    openFormSheet(actionTitles[chosenKind] || 'ثبت تراکنش شخص', 'نوع عملیات: ' + (actionTitles[chosenKind] || 'انتخاب از فهرست') + ' · صندوق متناسب را انتخاب کنید', [
       {key:'date', type:'date'},
-      {key:'kind', type:'select', label:'نوع حرکت', options:[
-        {v:'service', l:'ایجاد بدهی / خدمت (طلب ما از شخص)'},
-        {v:'received', l:'دریافت از شخص (پرداخت بدهی شخص)'},
-        {v:'pay', l:'پرداخت ما به شخص (بدهی ما به شخص)'},
-        {v:'borrow', l:'دریافت مساعده از شخص (ما بدهکاریم)'}
-      ]},
       {key:'amount', type:'number', label:'مبلغ', placeholder:'0'},
       {key:'fund', type:'select', label:'لینک به صندوق', options:[{v:'',l:'— بدون صندوق —'}, ...expOpts, ...incOpts]},
       {key:'note', type:'text', label:'توضیحات (اختیاری)', placeholder:''}
@@ -4446,7 +4480,7 @@ if(t.id==='addMultiExpenseBtn'){ addMultiFundExpense(); return; }
       const amount = Number(vals.amount)||0;
       if(amount < 1){ setFieldError('amount','مبلغ معتبر وارد کنید'); return false; }
       const d = vals.date || todayJalali();
-      const kind = vals.kind || 'service';
+      const kind = chosenKind || vals.kind || 'service';
       let service=0, received=0, paid=0, borrowed=0, fundDir=null, preferType=null;
       if(kind==='service'){ service=amount; fundDir='out'; preferType='expense'; }
       else if(kind==='received'){ received=amount; fundDir='in'; preferType='income'; }
@@ -4516,9 +4550,9 @@ document.addEventListener('input', function(e){
   const loanName = t.getAttribute('data-loan-name');
   if(loanName){ const l=STATE.loans.find(x=>x.id===loanName); if(l){ l.name=t.value; saveState(); } return; }
   const loanStart = t.getAttribute('data-loan-start');
-  if(loanStart){ const l=STATE.loans.find(x=>x.id===loanStart); if(l){ l.startBalance=parseFloat(t.value)||0; saveState(); renderLoans(); renderDashboard(); } return; }
+  if(loanStart){ const l=STATE.loans.find(x=>x.id===loanStart); if(l){ const n=getMoneyInputNumber(t); l.startBalance=n; saveState(); const h=document.querySelector('[data-loan-start-words="'+loanStart+'"]'); if(h) h.textContent=n?moneyWords(n):''; document.getElementById('loanTotalRemain').textContent=fmtMoney(loansTotalRemain()); document.getElementById('loanTotalMonthly').textContent=fmtMoney(loansTotalMonthly()); } return; }
   const loanMonthly = t.getAttribute('data-loan-monthly');
-  if(loanMonthly){ const l=STATE.loans.find(x=>x.id===loanMonthly); if(l){ l.monthly=parseFloat(t.value)||0; saveState(); renderLoans(); renderDashboard(); } return; }
+  if(loanMonthly){ const l=STATE.loans.find(x=>x.id===loanMonthly); if(l){ const n=getMoneyInputNumber(t); l.monthly=n; saveState(); const h=document.querySelector('[data-loan-monthly-words="'+loanMonthly+'"]'); if(h) h.textContent=n?moneyWords(n):''; document.getElementById('loanTotalRemain').textContent=fmtMoney(loansTotalRemain()); document.getElementById('loanTotalMonthly').textContent=fmtMoney(loansTotalMonthly()); } return; }
 
   const personName = t.getAttribute('data-person-name');
   if(personName){ const p=STATE.persons.find(x=>x.id===personName); if(p){ p.name=t.value; saveState(); } return; }
