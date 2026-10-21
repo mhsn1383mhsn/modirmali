@@ -11,6 +11,24 @@
 <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 
+
+html, body{
+  background: var(--bg-base);
+  min-height: 100%;
+  min-height: 100dvh;
+}
+body.theme-light{
+  background: var(--bg-base);
+}
+.app{
+  min-height: 100%;
+  min-height: 100dvh;
+  background: var(--bg-base);
+}
+.topbar{
+  background: var(--header-bg, var(--bg-base));
+}
+
 :root{
   color-scheme: dark;
   --ink:#03070C; --panel:#0B1119; --panel-2:#101923; --panel-3:#162331;
@@ -143,13 +161,13 @@ button, input, select, textarea{
 .drawer-acct.guest .meta .nm{font-weight:700;color:var(--muted);}
 .pin-sheet{position:fixed;inset:0;z-index:130;display:none;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.55);padding:0;}
 .pin-sheet.show{display:flex;}
-.pin-sheet-box{width:100%;max-width:420px;background:var(--card-bg);border-radius:22px 22px 0 0;border:1px solid var(--card-border);padding:20px 18px 28px;box-shadow:0 -8px 40px rgba(0,0,0,.35);}
+.pin-sheet-box{width:100%;max-width:420px;background:var(--card-bg);border-radius:22px 22px 0 0;border:1px solid var(--card-border);padding:20px 18px 28px;box-shadow:0 -8px 40px rgba(0,0,0,.35);direction:rtl;}
 .pin-sheet-box h3{margin:0 0 6px;font-size:16px;font-weight:900;text-align:center;}
 .pin-sheet-box .hint{margin:0 0 16px;font-size:12px;color:var(--muted);text-align:center;line-height:1.7;}
 .pin-dots{display:flex;justify-content:center;gap:12px;margin:8px 0 20px;min-height:16px;}
 .pin-dots i{width:12px;height:12px;border-radius:50%;border:2px solid var(--muted);display:block;}
 .pin-dots i.on{background:var(--accent-text,#178BFF);border-color:var(--accent-text,#178BFF);}
-.pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:280px;margin:0 auto;}
+.pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:280px;margin:0 auto;direction:ltr;unicode-bidi:isolate;}
 .pin-pad button{height:56px;border-radius:16px;border:1px solid var(--line);background:var(--panel-2);color:var(--paper);font-size:22px;font-weight:800;cursor:pointer;}
 .pin-pad button:active{transform:scale(.96);background:rgba(23,139,255,.12);}
 .pin-pad button.act{font-size:14px;font-weight:700;color:var(--muted);}
@@ -996,7 +1014,7 @@ body.theme-light .toast{
     <div style="font-size:42px;margin-bottom:10px;">🔐</div>
     <h2 style="margin:0 0 8px;font-size:18px;font-weight:900;">ورود به برنامه</h2>
     <p style="margin:0 0 14px;color:var(--muted);font-size:12.5px;line-height:1.8;">رمز عبور را وارد کنید</p>
-    <input type="password" id="lockPinInput" inputmode="numeric" maxlength="8" placeholder="رمز" style="width:100%;text-align:center;letter-spacing:6px;font-size:20px;font-weight:800;padding:14px;border-radius:12px;border:1px solid var(--line);background:var(--input-bg);color:var(--paper);margin-bottom:10px;">
+    <input type="password" id="lockPinInput" inputmode="numeric" dir="ltr" maxlength="8" placeholder="رمز" style="width:100%;text-align:center;letter-spacing:6px;font-size:20px;font-weight:800;padding:14px;border-radius:12px;border:1px solid var(--line);background:var(--input-bg);color:var(--paper);margin-bottom:10px;">
     <div id="lockErr" style="display:none;color:var(--rust);font-size:12px;font-weight:700;margin-bottom:8px;">رمز نادرست است</div>
     <button class="btn btn-brass btn-full" id="lockUnlockBtn">ورود</button>
     <button class="btn btn-panel btn-full" id="lockBioBtn" style="margin-top:8px;display:none;">اثر انگشت / بیومتریک</button>
@@ -1312,18 +1330,62 @@ function addCategory(type, name){
   saveState();
   return true;
 }
+function themeColors(theme){
+  const light = theme === 'light';
+  return {
+    light,
+    // هم‌رنگ با --bg-base تم برنامه
+    bg: light ? '#EEF3F9' : '#02070D',
+    status: light ? '#EEF3F9' : '#02070D',
+    style: light ? 'DARK' : 'LIGHT' // رنگ متن/آیکون نوار وضعیت
+  };
+}
+function syncSystemBars(theme){
+  const c = themeColors(theme);
+  try{
+    document.documentElement.style.backgroundColor = c.bg;
+    document.body.style.backgroundColor = c.bg;
+  }catch(e){}
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if(meta) meta.setAttribute('content', c.status);
+  // StatusBar (اندروید) — بدون await تا UI گیر نکند
+  try{
+    const SB = (window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.StatusBar)
+      || (typeof capPlug==='function' ? capPlug('StatusBar') : null);
+    if(SB){
+      if(SB.setBackgroundColor) SB.setBackgroundColor({ color: c.status });
+      if(SB.setStyle) SB.setStyle({ style: c.style });
+      if(SB.setOverlaysWebView) SB.setOverlaysWebView({ overlay: false });
+    }
+  }catch(e){}
+}
 function applyTheme(){
   const theme = (STATE && STATE.settings && STATE.settings.theme) || 'light';
-  document.body.classList.toggle('theme-light', theme === 'light');
-  const meta = document.querySelector('meta[name="theme-color"]');
-  if(meta) meta.setAttribute('content', theme === 'light' ? '#F2F6FB' : '#050A10');
+  const light = theme === 'light';
+  // فقط کلاس — بدون رندر دوباره کل صفحه
+  document.body.classList.toggle('theme-light', light);
+  document.body.classList.toggle('theme-dark', !light);
+  syncSystemBars(theme);
+  // دکمه‌های تم در تنظیمات
+  try{
+    document.querySelectorAll('[data-theme]').forEach(b=>{
+      b.classList.toggle('active', b.getAttribute('data-theme')===theme);
+    });
+  }catch(e){}
 }
 function setTheme(theme){
   if(!STATE.settings) STATE.settings = {};
+  if(STATE.settings.theme === theme){
+    applyTheme();
+    return;
+  }
   STATE.settings.theme = theme;
-  saveState();
+  // اول ظاهر، بعد ذخیره (تا لگ حس نشود)
   applyTheme();
-  renderSettings();
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(Object.assign({}, STATE, {mt: Date.now()}))); }catch(e){}
+  STATE.mt = Date.now();
+  // cloud و toast با تأخیر ناچیز
+  setTimeout(()=>{ try{ if(typeof cloudPush==='function') cloudPush(); }catch(e){} }, 0);
   showToast(theme === 'light' ? 'حالت روشن فعال شد' : 'حالت تاریک فعال شد');
 }
 function openDrawer(){
@@ -1397,12 +1459,35 @@ function autoAllocateIncome(amount, d, fromFundId, noteBase){
         const chShare = share * ((Number(ch.percent)||0)/100);
         if(chShare > 0){
           ch.entries = ch.entries || [];
-          ch.entries.push({id:uid(), jy:d.jy, jm:d.jm, jd:d.jd, in:chShare, out:0, note:'تخصیص خودکار از «'+(parent.name||'')+'»'});
+          ch.entries.push({id:uid(), jy:d.jy, jm:d.jm, jd:d.jd, in:chShare, out:0, note:(noteBase||('تخصیص خودکار از «'+(parent.name||'')+'»'))});
         }
       });
     } else {
       parent.entries = parent.entries || [];
-      parent.entries.push({id:uid(), jy:d.jy, jm:d.jm, jd:d.jd, in:share, out:0, note:'تخصیص خودکار از درآمد'});
+      parent.entries.push({id:uid(), jy:d.jy, jm:d.jm, jd:d.jd, in:share, out:0, note:(noteBase||'تخصیص خودکار از درآمد')});
+    }
+  });
+}
+/** معکوس تخصیص: هنگام هزینه از صندوق درآمدی، همان درصدها از صندوق‌های هزینه‌ای کسر می‌شود */
+function autoDeallocateExpense(amount, d, fromFundId, noteBase){
+  const tops = topExpenseFunds();
+  if(!(amount>0) || !tops.length) return;
+  const note = noteBase || 'برگشت تخصیص به‌خاطر هزینه از صندوق درآمدی';
+  tops.forEach(parent=>{
+    const share = amount * ((Number(parent.percent)||0)/100);
+    if(share <= 0) return;
+    const kids = childFunds(parent.id);
+    if(kids.length){
+      kids.forEach(ch=>{
+        const chShare = share * ((Number(ch.percent)||0)/100);
+        if(chShare > 0){
+          ch.entries = ch.entries || [];
+          ch.entries.push({id:uid(), jy:d.jy, jm:d.jm, jd:d.jd, in:0, out:chShare, note:note+' · «'+(parent.name||'')+'»'});
+        }
+      });
+    } else {
+      parent.entries = parent.entries || [];
+      parent.entries.push({id:uid(), jy:d.jy, jm:d.jm, jd:d.jd, in:0, out:share, note:note});
     }
   });
 }
@@ -1491,6 +1576,61 @@ function personsNetTotal(){ return STATE.persons.reduce((s,p)=> s+personBalance(
 
 /* ============== funds link + budget + month sums ============== */
 function findFund(id){ return (STATE.funds||[]).find(f=>f.id===id); }
+function addIncomeFundMovement(fundId, dir){
+  const f = findFund(fundId);
+  if(!f || !isIncomeFund(f)){ showToast('صندوق درآمدی پیدا نشد'); return; }
+  const isIn = dir==='in';
+  openFormSheet(
+    isIn ? ('درآمد به «'+(f.name||'صندوق')+'»') : ('هزینه از «'+(f.name||'صندوق')+'»'),
+    isIn ? 'مبلغ درآمد ثبت و دقیقاً بر اساس درصدها بین صندوق‌های هزینه‌ای تقسیم می‌شود.'
+         : 'مبلغ هزینه ثبت و همان درصدها از صندوق‌های هزینه‌ای کسر می‌شود (برگشت تخصیص).',
+    [
+      {key:'amount', type:'number', label:'مبلغ ('+currencyUnit()+')', placeholder:'مبلغ'},
+      {key:'date', type:'date', label:'تاریخ'},
+      {key:'note', label:'توضیحات', placeholder:'مثلاً سود / برداشت شخصی'}
+    ],
+    isIn ? 'ثبت درآمد' : 'ثبت هزینه',
+    out=>{
+      const amount = out.amount||0;
+      if(!(amount>0)){ showToast('مبلغ معتبر نیست'); return false; }
+      const d = out.date || todayJalali();
+      f.entries = f.entries || [];
+      const noteBits = [(isIn?'درآمد صندوق درآمدی':'هزینه صندوق درآمدی'), out.note||''].filter(Boolean).join(' — ');
+      f.entries.push({
+        id: uid(),
+        jy: d.jy, jm: d.jm, jd: d.jd,
+        in: isIn ? amount : 0,
+        out: isIn ? 0 : amount,
+        note: noteBits
+      });
+      // ثبت در تراکنش‌ها تا روی گزارش ماهانه هم دیده شود
+      const tx = {
+        id: uid(),
+        type: isIn ? 'income' : 'expense',
+        amount,
+        category: isIn ? 'درآمد صندوق درآمدی' : 'هزینه صندوق درآمدی',
+        date: `${d.jy}/${pad2(d.jm)}/${pad2(d.jd)}`,
+        note: (out.note||'').trim(),
+        fundId: f.id,
+        createdAt: Date.now()
+      };
+      // لینک entry
+      const last = f.entries[f.entries.length-1];
+      tx.fundEntryId = last.id;
+      STATE.transactions = STATE.transactions || [];
+      STATE.transactions.push(tx);
+      // درآمد: تخصیص درصدی / هزینه: برگشت همان درصدها از صندوق‌های هزینه‌ای
+      if(isIn){
+        try{ autoAllocateIncome(amount, d, f.id, 'تخصیص از درآمد صندوق «'+(f.name||'')+'»'); }catch(e){ console.warn(e); }
+      } else {
+        try{ autoDeallocateExpense(amount, d, f.id, 'برگشت تخصیص به‌خاطر هزینه از «'+(f.name||'')+'»'); }catch(e){ console.warn(e); }
+      }
+      saveState();
+      renderFunds(); renderCashflow(); renderDashboard();
+      showToast(isIn ? 'درآمد ثبت و بین درصدها تقسیم شد' : 'هزینه ثبت و از درصدها کسر شد');
+    }
+  );
+}
 function linkFundEntry(fund, dir, amount, jd, jm, note){
   const e={id:uid(), jm, jd, in:dir==='in'?amount:0, out:dir==='out'?amount:0, note:note||''};
   fund.entries.push(e); return e.id;
@@ -1712,6 +1852,16 @@ function renderFunds(){
   if(topExpenseFunds().length && Math.abs(topPct-100)>0.05){
     warnParts.push('مجموع درصد صندوق‌های هزینه‌ای سطح‌بالا (پرنت) <b>'+toFa(Math.round(topPct*10)/10)+'٪</b> است — باید دقیقاً <b>۱۰۰٪</b> باشد.');
   }
+  // خروج از صندوق‌های درآمدی روی تصویر کلی درصدها اثر دارد
+  const _incFs = incomeFunds();
+  const _tin = _incFs.reduce((s,f)=>s+(f.entries||[]).reduce((a,e)=>a+(Number(e.in)||0),0),0);
+  const _tout = _incFs.reduce((s,f)=>s+(f.entries||[]).reduce((a,e)=>a+(Number(e.out)||0),0),0);
+  if(_tin>0 && _tout>0){
+    const op = Math.round((_tout/_tin)*1000)/10;
+    if(op>=5){
+      warnParts.push('از صندوق‌های درآمدی حدود <b>'+toFa(op)+'٪</b> به‌صورت خروج برداشته شده؛ این مبلغ دیگر در تخصیص درصدی هزینه‌ای‌ها شرکت نمی‌کند و مانده/درصد سهم درآمدی‌ها را تغییر می‌دهد.');
+    }
+  }
   topExpenseFunds().forEach(p=>{
     const kids = childFunds(p.id);
     if(!kids.length) return;
@@ -1742,25 +1892,36 @@ function renderFunds(){
     if(!incomes.length){
       htmlOut += '<div class="empty-state" style="padding:14px;">صندوق درآمدی ندارید.</div>';
     } else {
+            const totalIncBal = incomes.reduce((s,f)=>s+fundBalance(f),0);
+      const totalIncIn = incomes.reduce((s,f)=>s+(f.entries||[]).reduce((a,e)=>a+(Number(e.in)||0),0),0);
+      const totalIncOut = incomes.reduce((s,f)=>s+(f.entries||[]).reduce((a,e)=>a+(Number(e.out)||0),0),0);
       htmlOut += '<div class="fund-income-list">'+incomes.map(f=>{
         const bal = fundBalance(f);
         const cls = bal>0?'pos':(bal<0?'neg':'zero');
         const hasLink = (f.entries&&f.entries.length) || (STATE.transactions||[]).some(tx=>tx.fundId===f.id||tx.toFundId===f.id);
         const totalIn = (f.entries||[]).reduce((s,e)=>s+(Number(e.in)||0),0);
+        const totalOut = (f.entries||[]).reduce((s,e)=>s+(Number(e.out)||0),0);
+        const sharePct = totalIncBal>0 ? Math.round((bal/totalIncBal)*1000)/10 : 0;
+        const outPctOfIn = totalIn>0 ? Math.round((totalOut/totalIn)*1000)/10 : 0;
         return `<div class="fund-parent-box" data-fund-card="${f.id}">
           <div class="fund-parent-head">
             <span class="fund-type-pill inc">درآمدی</span>
             <span class="fp-name">${esc(f.name||'—')}</span>
             <span class="eh-badge ${cls}">${fmtMoney(bal)}</span>
           </div>
-          <div class="ent-meta">جمع کل درآمد ثبت‌شده: <b>${fmtMoney(totalIn)}</b></div>
-          <div class="fund-box-actions">
+          <div class="ent-meta">ورود: <b class="pos">${fmtMoney(totalIn)}</b> · خروج: <b class="neg">${fmtMoney(totalOut)}</b> · سهم از کل درآمدی‌ها: <b>${toFa(sharePct)}٪</b>${totalIn?(' · نسبت خروج: <b>'+toFa(outPctOfIn)+'٪</b>'):''}</div>
+          <div class="fund-box-actions" style="flex-wrap:wrap;">
+            <button class="btn-sm btn-panel" data-income-fund-in="${f.id}" style="color:var(--sage);">＋ درآمد</button>
+            <button class="btn-sm btn-panel" data-income-fund-out="${f.id}" style="color:var(--rust);">− هزینه</button>
             <input type="text" data-fund-name="${f.id}" value="${esc(f.name||'')}" placeholder="نام صندوق" style="flex:1;min-width:100px;background:var(--input-bg);border:1px solid var(--card-border);border-radius:10px;padding:8px 10px;color:var(--paper);font:13px Vazirmatn,sans-serif;">
             <button class="btn-sm btn-panel" data-edit-fund-name="${f.id}">ویرایش نام</button>
             ${hasLink?`<button class="btn-sm btn-panel" disabled style="opacity:.55;">غیرقابل حذف</button>`:`<button class="btn-sm btn-rust" data-remove-fund="${f.id}">حذف</button>`}
           </div>
         </div>`;
       }).join('')+'</div>';
+      if(incomes.length){
+        htmlOut += `<div class="ent-meta" style="margin:8px 4px 0;line-height:1.8;">جمع ورود صندوق‌های درآمدی: <b class="pos">${fmtMoney(totalIncIn)}</b> · جمع خروج: <b class="neg">${fmtMoney(totalIncOut)}</b> · مانده کل: <b>${fmtMoney(totalIncBal)}</b></div>`;
+      }
     }
   }
 
@@ -3651,7 +3812,11 @@ document.addEventListener('click', function(e){
   /* ---- income & expense ---- */
   if(t.id==='addIncomeBtn'){ addIncomeExpense('income'); return; }
   if(t.id==='addExpenseBtn'){ addIncomeExpense('expense'); return; }
-  if(t.id==='addMultiExpenseBtn'){ addMultiFundExpense(); return; }
+    const incInBtn = t.closest('[data-income-fund-in]');
+  if(incInBtn){ addIncomeFundMovement(incInBtn.getAttribute('data-income-fund-in'), 'in'); return; }
+  const incOutBtn = t.closest('[data-income-fund-out]');
+  if(incOutBtn){ addIncomeFundMovement(incOutBtn.getAttribute('data-income-fund-out'), 'out'); return; }
+if(t.id==='addMultiExpenseBtn'){ addMultiFundExpense(); return; }
   const ieViewBtn = t.closest('[data-ie-view]');
   if(ieViewBtn){
     ieViewMode = ieViewBtn.getAttribute('data-ie-view') || 'list';
@@ -4360,7 +4525,28 @@ function renderAccount(){
     }
   }
 }
-document.addEventListener('visibilitychange',()=>{ if(!document.hidden && CU) cloudStart(); });
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden){
+    // با رفتن به پس‌زمینه، قفل دوباره فعال می‌شود
+    try{ sessionStorage.removeItem('mf_unlocked'); }catch(e){}
+  } else {
+    try{ showLockIfNeeded(); }catch(e){}
+    if(CU) cloudStart();
+  }
+});
+// Capacitor: وقتی اپ pause/resume می‌شود
+try{
+  const A = (typeof capPlug==='function' ? capPlug('App') : null) || (window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.App);
+  if(A && A.addListener){
+    A.addListener('appStateChange', function(state){
+      if(!state || !state.isActive){
+        try{ sessionStorage.removeItem('mf_unlocked'); }catch(e){}
+      } else {
+        try{ showLockIfNeeded(); }catch(e){}
+      }
+    });
+  }
+}catch(e){}
 window.addEventListener('online',()=>{ if(CU) cloudStart(); });
 
 /* ============== init ============== */

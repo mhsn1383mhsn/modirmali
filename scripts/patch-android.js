@@ -55,3 +55,25 @@ if (fs.existsSync(brandingAndroid) && fs.existsSync(resDir)) {
   console.log('patch-android: custom icons applied');
 }
 console.log('patch-android: OK');
+
+// System bar colors matching app theme (default dark; JS StatusBar updates at runtime)
+try {
+  const stylesDir = path.join(root, 'android', 'app', 'src', 'main', 'res', 'values');
+  const stylesPath = path.join(stylesDir, 'styles.xml');
+  if (fs.existsSync(stylesPath)) {
+    let styles = fs.readFileSync(stylesPath, 'utf8');
+    if (!styles.includes('android:navigationBarColor')) {
+      styles = styles.replace(
+        /<\/style>\s*<\/resources>/,
+        `    <item name="android:statusBarColor">#02070D</item>
+        <item name="android:navigationBarColor">#02070D</item>
+        <item name="android:windowBackground">#02070D</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+</resources>`
+      );
+      fs.writeFileSync(stylesPath, styles);
+      console.log('patch-android: system bar colors set');
+    }
+  }
+} catch (e) { console.warn('styles patch', e); }
