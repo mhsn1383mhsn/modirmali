@@ -1348,8 +1348,10 @@ function themeColors(theme){
     light,
     bg: light ? '#EEF3F9' : '#02070D',
     status: light ? '#EEF3F9' : '#02070D',
-    // DARK = آیکون تیره روی زمینه روشن | LIGHT = آیکون روشن روی زمینه تیره
-    style: light ? 'DARK' : 'LIGHT'
+    // طبق مستندات Capacitor StatusBar:
+    // LIGHT = آیکون تیره (برای پس‌زمینه روشن)
+    // DARK  = آیکون روشن (برای پس‌زمینه تیره)
+    style: light ? 'LIGHT' : 'DARK'
   };
 }
 function getStatusBar(){
@@ -1376,24 +1378,16 @@ function syncSystemBars(theme){
   const SB = getStatusBar();
   if(!SB) return;
 
-  // overlay=true: رنگ نوار = پس‌زمینه صفحه (نه لایه مشکی جدا)
   const apply = async ()=>{
-    try{
-      if(SB.setOverlaysWebView) await SB.setOverlaysWebView({ overlay: true });
-    }catch(e){}
-    try{
-      if(SB.setStyle) await SB.setStyle({ style: c.style });
-    }catch(e){
-      try{ if(SB.setStyle) await SB.setStyle({ style: c.light ? 'DARK' : 'LIGHT' }); }catch(e2){}
-    }
-    // بعضی گوشی‌ها با overlay هنوز setBackgroundColor می‌خواهند
-    try{
-      if(SB.setBackgroundColor) await SB.setBackgroundColor({ color: c.status });
-    }catch(e){}
+    // نوار غیرشفاف با رنگ تم — آیکون‌ها را خود سیستم با contrast درست می‌کشد
+    try{ if(SB.setOverlaysWebView) await SB.setOverlaysWebView({ overlay: false }); }catch(e){}
+    try{ if(SB.setBackgroundColor) await SB.setBackgroundColor({ color: c.status }); }catch(e){}
+    try{ if(SB.setStyle) await SB.setStyle({ style: c.style }); }catch(e){}
   };
   try{ apply(); }catch(e){ console.warn('syncSystemBars', e); }
 }
 function applyTheme(){
+
 
   const theme = (STATE && STATE.settings && STATE.settings.theme) || 'light';
   const light = theme === 'light';
