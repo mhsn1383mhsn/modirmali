@@ -67,8 +67,8 @@ try {
       styles = styles.replace(
         /<\/style>\s*<\/resources>/,
         `    <!-- financeSystemBars -->
-        <item name="android:statusBarColor">@android:color/transparent</item>
-        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:statusBarColor">#EEF3F9</item>
+        <item name="android:navigationBarColor">#EEF3F9</item>
         <item name="android:windowBackground">#EEF3F9</item>
         <item name="android:windowLightStatusBar">true</item>
         <item name="android:windowLightNavigationBar">true</item>
@@ -80,3 +80,46 @@ try {
     }
   }
 } catch (e) { console.warn('styles patch', e); }
+
+
+// Ensure navigation bar color is applied in MainActivity when possible
+try {
+  const mainPaths = [
+    path.join(root, 'android', 'app', 'src', 'main', 'java'),
+    path.join(root, 'android', 'app', 'src', 'main', 'kotlin')
+  ];
+  function walk(dir, out=[]) {
+    if (!fs.existsSync(dir)) return out;
+    for (const name of fs.readdirSync(dir)) {
+      const p = path.join(dir, name);
+      if (fs.statSync(p).isDirectory()) walk(p, out);
+      else if (/MainActivity\.(java|kt)$/.test(name)) out.push(p);
+    }
+    return out;
+  }
+  for (const base of mainPaths) {
+    for (const mainFile of walk(base)) {
+      let src = fs.readFileSync(mainFile, 'utf8');
+      if (src.includes('financeNavBar')) continue;
+      if (mainFile.endsWith('.java') && src.includes('onCreate')) {
+        src = src.replace(
+          /super\.onCreate\([^)]*\);/,
+          (m) => m + `
+        // financeNavBar: match light theme default; JS plugin updates at runtime
+        try {
+            if (android.os.Build.VERSION.SDK_INT >= 21) {
+                getWindow().setNavigationBarColor(android.graphics.Color.parseColor("#EEF3F9"));
+            }
+            if (android.os.Build.VERSION.SDK_INT >= 27) {
+                int flags = getWindow().getDecorView().getSystemUiVisibility();
+                flags |= android.view.View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
+                getWindow().getDecorView().setSystemUiVisibility(flags);
+            }
+        } catch (Exception ignored) {}`
+        );
+        fs.writeFileSync(mainFile, src);
+        console.log('patch-android: MainActivity nav bar', mainFile);
+      }
+    }
+  }
+} catch (e) { console.warn('MainActivity nav patch', e); }

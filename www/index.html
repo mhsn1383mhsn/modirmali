@@ -24,6 +24,8 @@ body.theme-light{
   min-height: 100%;
   min-height: 100dvh;
   background: var(--bg-base);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  box-sizing: border-box;
 }
 .topbar{
   background: var(--bg-base);
@@ -43,7 +45,7 @@ body::after{
   content:'';
   position:fixed;
   bottom:0; left:0; right:0;
-  height: env(safe-area-inset-bottom, 0px);
+  height: max(env(safe-area-inset-bottom, 0px), 0px);
   background: var(--bg-base);
   z-index: 200;
   pointer-events:none;
@@ -1375,18 +1377,43 @@ function syncSystemBars(theme){
     if(meta) meta.setAttribute('content', c.status);
   }catch(e){}
 
+  // Status bar (بالا)
   const SB = getStatusBar();
-  if(!SB) return;
-
-  const apply = async ()=>{
-    // نوار غیرشفاف با رنگ تم — آیکون‌ها را خود سیستم با contrast درست می‌کشد
+  const applyTop = async ()=>{
+    if(!SB) return;
     try{ if(SB.setOverlaysWebView) await SB.setOverlaysWebView({ overlay: false }); }catch(e){}
     try{ if(SB.setBackgroundColor) await SB.setBackgroundColor({ color: c.status }); }catch(e){}
     try{ if(SB.setStyle) await SB.setStyle({ style: c.style }); }catch(e){}
   };
-  try{ apply(); }catch(e){ console.warn('syncSystemBars', e); }
+  try{ applyTop(); }catch(e){ console.warn('statusBar', e); }
+
+  // Navigation bar (پایین) — رنگ تم + آیکون‌های خوانا
+  const applyBottom = async ()=>{
+    let NB = null;
+    try{
+      if(window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.NavigationBar) NB = Capacitor.Plugins.NavigationBar;
+      else if(typeof capPlug === 'function') NB = capPlug('NavigationBar');
+      else if(window.Capacitor && typeof Capacitor.registerPlugin === 'function') NB = Capacitor.registerPlugin('NavigationBar');
+    }catch(e){}
+    if(!NB) return;
+    try{
+      // darkButtons=true → دکمه‌های تیره برای پس‌زمینه روشن
+      if(NB.setColor){
+        await NB.setColor({ color: c.status, darkButtons: !!c.light });
+      } else if(NB.setNavigationBarColor){
+        await NB.setNavigationBarColor({ color: c.status, darkButtons: !!c.light });
+      }
+    }catch(e){
+      try{ if(NB.setColor) await NB.setColor({ color: c.status }); }catch(e2){}
+    }
+    try{
+      if(NB.setTransparency) await NB.setTransparency({ isTransparent: false });
+    }catch(e){}
+  };
+  try{ applyBottom(); }catch(e){ console.warn('navBar', e); }
 }
 function applyTheme(){
+
 
 
   const theme = (STATE && STATE.settings && STATE.settings.theme) || 'light';
