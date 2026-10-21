@@ -191,6 +191,16 @@ button, input, select, textarea{
 .pin-dots{display:flex;justify-content:center;gap:12px;margin:8px 0 20px;min-height:16px;}
 .pin-dots i{width:12px;height:12px;border-radius:50%;border:2px solid var(--muted);display:block;}
 .pin-dots i.on{background:var(--accent-text,#178BFF);border-color:var(--accent-text,#178BFF);}
+.loan-day-grid button{
+  height:36px;border-radius:10px;border:1px solid var(--line);background:var(--panel-2);color:var(--paper);
+  font-size:12px;font-weight:800;cursor:pointer;padding:0;
+}
+.loan-day-grid button.active{
+  background:linear-gradient(135deg,#178BFF,#0B4D8C);color:#fff;border-color:transparent;
+}
+.loan-day-grid button.soft{
+  opacity:.45;
+}
 .pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:280px;margin:0 auto;direction:ltr;unicode-bidi:isolate;}
 .pin-pad button{height:56px;border-radius:16px;border:1px solid var(--line);background:var(--panel-2);color:var(--paper);font-size:22px;font-weight:800;cursor:pointer;}
 .pin-pad button:active{transform:scale(.96);background:rgba(23,139,255,.12);}
@@ -392,6 +402,41 @@ body.theme-light .drawer{box-shadow:-12px 0 40px rgba(20,50,90,.12);}
 .fund-type-pill.inc{background:var(--sage-bg);color:var(--sage);}
 .fund-type-pill.exp{background:var(--rust-bg);color:var(--rust);}
 
+
+
+/* Premium batch percentage editor */
+.fund-pct-modal{position:fixed;inset:0;z-index:10050;background:rgba(2,8,16,.78);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px);display:flex;align-items:center;justify-content:center;padding:16px;animation:pctFade .18s ease;direction:rtl}
+.fund-pct-dialog{width:min(520px,100%);max-height:88vh;overflow:auto;background:var(--card-bg);color:var(--paper);border:1px solid rgba(99,179,255,.25);border-radius:23px;padding:20px;box-shadow:0 24px 90px rgba(0,0,0,.48),inset 0 1px 0 rgba(255,255,255,.04)}
+.fund-pct-titlebar{display:flex;align-items:center;gap:12px;margin-bottom:8px}
+.fund-pct-icon{width:43px;height:43px;display:grid;place-items:center;flex-shrink:0;border-radius:14px;background:linear-gradient(145deg,rgba(47,140,255,.22),rgba(47,140,255,.07));border:1px solid rgba(99,179,255,.25);font-size:20px}
+.fund-pct-title{margin:0;font-size:16px;font-weight:900;line-height:1.6}
+.fund-pct-subtitle{font-size:11.5px;color:var(--muted);line-height:1.9;margin:0 0 15px}
+.fund-pct-list{display:grid;gap:9px}
+.fund-pct-row{display:grid;grid-template-columns:minmax(0,1fr) 118px;gap:12px;align-items:center;padding:12px;background:var(--panel-2);border:1px solid var(--line);border-radius:15px;transition:border-color .18s,background .18s}
+.fund-pct-row:focus-within{border-color:rgba(47,140,255,.58);background:rgba(47,140,255,.055)}
+.fund-pct-name{font-size:13px;font-weight:800;overflow-wrap:anywhere;line-height:1.6}
+.fund-pct-current{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;color:var(--muted);margin-top:4px}
+.fund-pct-current b{color:var(--brass-2);font-weight:800}
+.fund-pct-inputwrap{display:flex;align-items:center;gap:7px;padding:3px 9px;border:1px solid var(--card-border);border-radius:12px;background:var(--card-bg)}
+.fund-pct-inputwrap input{width:100%;min-width:0;border:0!important;outline:0;background:transparent!important;color:var(--paper);padding:8px 0!important;text-align:center;font:800 16px 'Vazirmatn',sans-serif;box-shadow:none!important;appearance:textfield;-moz-appearance:textfield}
+.fund-pct-inputwrap input::-webkit-inner-spin-button,.fund-pct-inputwrap input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.fund-pct-sign{font-size:13px;font-weight:900;color:var(--accent-text)}
+.fund-pct-summary{padding:13px 14px;margin:15px 0 9px;border:1px solid var(--line);border-radius:14px;background:var(--panel-2)}
+.fund-pct-summaryline{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12px;font-weight:800}
+.fund-pct-total{font-size:19px;font-weight:900;letter-spacing:.2px;color:var(--accent-text)}
+.fund-pct-track{height:6px;overflow:hidden;border-radius:10px;background:var(--line);margin-top:10px}
+.fund-pct-track span{height:100%;width:0;display:block;border-radius:10px;background:linear-gradient(90deg,#2f8cff,#64d5ff);transition:width .18s,background .18s}
+.fund-pct-summary.good{border-color:rgba(59,190,130,.38);background:rgba(59,190,130,.07)}
+.fund-pct-summary.good .fund-pct-total{color:var(--sage)}
+.fund-pct-summary.good .fund-pct-track span{background:var(--sage)}
+.fund-pct-summary.over{border-color:rgba(255,102,128,.42);background:rgba(255,102,128,.07)}
+.fund-pct-summary.over .fund-pct-total{color:var(--rust)}
+.fund-pct-summary.over .fund-pct-track span{background:var(--rust)}
+.fund-pct-error{font-size:11.5px;color:var(--rust);line-height:1.8;min-height:0;margin-bottom:10px}
+.fund-pct-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.fund-pct-actions button{min-height:43px;border-radius:12px;font-size:12px;font-weight:900}
+@keyframes pctFade{from{opacity:0}to{opacity:1}}
+@media(max-width:420px){.fund-pct-dialog{padding:15px;border-radius:19px}.fund-pct-row{grid-template-columns:minmax(0,1fr) 102px;padding:10px;gap:8px}.fund-pct-name{font-size:12px}.fund-pct-inputwrap input{font-size:15px}}
 
 .fund-box-grid{display:grid;grid-template-columns:1fr;gap:12px;margin-top:12px;}
 .fund-parent-box{
@@ -776,6 +821,16 @@ body.theme-light .toast{
   color:#03070C;
 }
 
+
+/* Premium percentage manager buttons */
+.btn-percent-manager{position:relative;display:inline-flex!important;align-items:center;justify-content:center;gap:9px;min-height:42px;padding:8px 13px!important;border:1px solid rgba(74,153,255,.42)!important;border-radius:13px!important;background:linear-gradient(135deg,rgba(35,117,230,.19),rgba(24,190,190,.09))!important;color:var(--paper)!important;font-size:12px!important;font-weight:850!important;letter-spacing:-.15px;box-shadow:0 5px 16px rgba(22,103,190,.12),inset 0 1px 0 rgba(255,255,255,.07)!important;transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease;white-space:nowrap}
+.btn-percent-manager:hover{transform:translateY(-1px);border-color:rgba(83,190,255,.8)!important;box-shadow:0 8px 22px rgba(22,103,190,.2),inset 0 1px 0 rgba(255,255,255,.1)!important}
+.btn-percent-manager:active{transform:translateY(0) scale(.985)}
+.pct-manager-icon{display:inline-grid;place-items:center;width:25px;height:25px;flex:0 0 25px;border-radius:8px;background:linear-gradient(145deg,#2563eb,#7c3aed);color:#fff;line-height:1;box-shadow:0 3px 8px rgba(79,70,229,.24)}
+.pct-manager-arrow{display:inline-grid;place-items:center;width:20px;height:20px;margin-right:1px;border-radius:6px;background:rgba(92,166,255,.12);color:#79bdff;font-size:21px;line-height:1}
+.btn-percent-manager-child{background:linear-gradient(135deg,rgba(27,156,168,.15),rgba(35,117,230,.09))!important;border-color:rgba(50,183,190,.35)!important}
+.btn-percent-manager-child .pct-manager-icon{background:linear-gradient(145deg,#0891b2,#2563eb)}
+@media(max-width:480px){.btn-percent-manager{min-height:40px;padding:7px 10px!important;gap:7px;font-size:11px!important}.pct-manager-icon{width:23px;height:23px;flex-basis:23px}}
 </style>
 </head>
 <body class="theme-light">
@@ -845,7 +900,26 @@ body.theme-light .toast{
       <div class="sum-card clay"><div class="sc-lbl">مجموع قسط ماهانه</div><div class="sc-val" id="loanTotalMonthly">۰</div></div>
     </div>
     <div id="loanList"></div>
-    <button class="add-inline-btn" id="addLoanBtn">➕ افزودن وام یا قسط جدید</button>
+    
+    <div class="ent-card" id="loanRemindCard" style="margin-bottom:14px;">
+      <button type="button" id="loanRemindToggleHead" class="loan-remind-head" style="width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;background:transparent;border:none;color:var(--paper);padding:0;cursor:pointer;text-align:right;">
+        <span style="font-weight:900;font-size:13.5px;">⏰ یادآور قسط</span>
+        <span id="loanRemindSummary" class="ent-meta" style="margin:0;flex:1;text-align:left;font-size:11.5px;"></span>
+        <span id="loanRemindChevron" style="font-size:12px;color:var(--muted);">▼</span>
+      </button>
+      <div id="loanRemindBody" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--line);">
+        <div class="ent-meta" style="line-height:1.75;margin-bottom:10px;font-size:11.5px;">
+          روز ترجیحی شمسی را انتخاب کنید. در ماه‌های ۲۹/۳۰ روزه اگر آن روز نباشد، <b>آخرین روز ماه</b> یادآوری می‌شود.
+        </div>
+        <div class="free-toggle" style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--line);border-radius:12px;background:var(--panel-2);margin-bottom:10px;">
+          <input type="checkbox" id="loanRemindEnable" style="accent-color:var(--brass);width:18px;height:18px;">
+          <label for="loanRemindEnable" style="font-size:12px;font-weight:700;flex:1;">فعال</label>
+        </div>
+        <div id="loanRemindDayGrid" class="loan-day-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:8px;"></div>
+        <div class="ent-meta" id="loanRemindDayHint" style="line-height:1.7;font-size:11px;"></div>
+      </div>
+    </div>
+<button class="add-inline-btn" id="addLoanBtn">➕ افزودن وام یا قسط جدید</button>
   </div>
 
   <!-- ===== PERSONS (حساب و کتاب) ===== -->
@@ -895,10 +969,10 @@ body.theme-light .toast{
     </div>
 
     <div id="ieListPanel">
-      <div class="sum-board" style="grid-template-columns:1fr 1fr 1fr; margin-top:12px;">
+      <div class="sum-board" style="grid-template-columns:1fr 1fr; margin-top:12px;">
         <div class="sum-card sage"><div class="sc-lbl">کل درآمد</div><div class="sc-val" id="ieIncomeTotal">۰</div></div>
         <div class="sum-card rust"><div class="sc-lbl">کل هزینه</div><div class="sc-val" id="ieExpenseTotal">۰</div></div>
-        <div class="sum-card clay"><div class="sc-lbl">خالص</div><div class="sc-val" id="ieNetTotal">۰</div></div>
+        <div class="sum-card clay" style="grid-column:1 / -1;"><div class="sc-lbl">خالص</div><div class="sc-val" id="ieNetTotal">۰</div></div>
       </div>
 
       <div class="action-grid" style="margin-top:4px;">
@@ -971,14 +1045,12 @@ body.theme-light .toast{
       </div>
       <div class="free-toggle" style="display:flex;align-items:center;gap:8px;padding:10px;border:1px solid var(--line);border-radius:12px;background:var(--panel-2);margin-bottom:8px;">
         <input type="checkbox" id="remLoansToggle" style="accent-color:var(--brass);width:18px;height:18px;">
-        <label for="remLoansToggle" style="font-size:12.5px;font-weight:700;flex:1;">موعد قسط — یادآوری ماهانه پرداخت وام‌ها</label>
+        <label for="remLoansToggle" style="font-size:12.5px;font-weight:700;flex:1;">موعد قسط — یادآوری ماهانه (روز دقیق در بخش «اقساط» تنظیم می‌شود)</label>
       </div>
       <div class="free-toggle" style="display:flex;align-items:center;gap:8px;padding:10px;border:1px solid var(--line);border-radius:12px;background:var(--panel-2);margin-bottom:8px;">
         <input type="checkbox" id="remPersonsToggle" style="accent-color:var(--brass);width:18px;height:18px;">
         <label for="remPersonsToggle" style="font-size:12.5px;font-weight:700;flex:1;">مطالبات اشخاص — اگر کسی به شما بدهکار است، یادآوری هفتگی</label>
       </div>
-      <div class="ent-meta" style="margin:10px 0 8px;">روز ماه برای یادآور قسط (۱ تا ۲۸)</div>
-      <input type="number" id="remLoanDay" min="1" max="28" value="1" style="width:100%;background:var(--input-bg);border:1px solid var(--card-border);border-radius:10px;padding:11px 13px;color:var(--paper);font:14px Vazirmatn,sans-serif;margin-bottom:12px;">
       <div class="action-grid">
         <button class="btn btn-brass" id="remRequestPermBtn">اجازه اعلان سیستم</button>
         <button class="btn btn-panel" id="remRescheduleBtn">زمان‌بندی مجدد اعلان‌ها</button>
@@ -1320,7 +1392,8 @@ function loadState(){
       if(typeof st.settings.remindChecks !== 'boolean') st.settings.remindChecks = true;
       if(typeof st.settings.remindLoans !== 'boolean') st.settings.remindLoans = true;
       if(typeof st.settings.remindPersons !== 'boolean') st.settings.remindPersons = false;
-      if(!st.settings.loanRemindDay) st.settings.loanRemindDay = 1;
+      if(!st.settings.loanRemindDay || st.settings.loanRemindDay < 1) st.settings.loanRemindDay = 1;
+      if(st.settings.loanRemindDay > 31) st.settings.loanRemindDay = 31;
       if(!Array.isArray(st.funds)) st.funds = [];
       if(!Array.isArray(st.wealthCategories)) st.wealthCategories = [];
       return st;
@@ -1998,7 +2071,7 @@ function renderFunds(){
 
   // صندوق‌های هزینه‌ای: باکس پرنت + باکس‌های چایلد زیرش
   if(filter==='all' || filter==='expense'){
-    htmlOut += `<div class="sec-h" style="margin-top:14px;"><h2 style="font-size:13px;">صندوق‌های هزینه‌ای</h2></div>`;
+    htmlOut += `<div class="sec-h" style="margin-top:14px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;"><h2 style="font-size:13px;">صندوق‌های هزینه‌ای</h2><button class="btn-sm btn-panel btn-percent-manager" data-edit-expense-percentages><span class="pct-manager-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 14.4 5l2.8-.1.8 2.7 2.2 1.8-1 2.6.6 2.7-2.5 1.3-1.3 2.5-2.7-.6-2.6 1-1.8-2.2-2.7-.8.1-2.8L4.8 12l1.5-2.4-.1-2.8 2.7-.8 1.8-2.2z"/><circle cx="9" cy="9" r="1.1"/><circle cx="15" cy="15" r="1.1"/><path d="m8.5 15.5 7-7"/></svg></span><span>مدیریت درصد صندوق‌ها</span><span class="pct-manager-arrow" aria-hidden="true">‹</span></button></div>`;
     if(!parents.length){
       htmlOut += '<div class="empty-state" style="padding:14px;">صندوق هزینه‌ای ندارید.</div>';
     } else {
@@ -2020,7 +2093,6 @@ function renderFunds(){
             <div class="fc-bal eh-badge ${ccls}" style="display:inline-block;">مانده ${fmtMoney(cb)}</div>
             <div class="fund-box-actions">
               <button class="btn-sm btn-panel" data-edit-fund-name="${ch.id}">ویرایش نام</button>
-              <button class="btn-sm btn-panel" data-edit-fund-pct="${ch.id}">٪ ${toFa(ch.percent||0)}</button>
               ${chLink?`<button class="btn-sm btn-panel" disabled style="opacity:.55;">—</button>`:`<button class="btn-sm btn-rust" data-remove-fund="${ch.id}">حذف</button>`}
             </div>
           </div>`;
@@ -2035,9 +2107,9 @@ function renderFunds(){
           <div class="ent-meta">مانده پرنت: <b>${fmtMoney(bal)}</b>${kids.length?(' · جمع مانده چایلدها: <b>'+fmtMoney(kidsBal)+'</b>'):''}</div>
           ${childWarn?`<div class="percent-warn" style="margin-top:8px;">جمع درصد چایلدها ${toFa(Math.round(childSum*10)/10)}٪ است (باید ۱۰۰٪ باشد)</div>`:''}
           <div class="fund-box-actions">
+            ${kids.length?`<button class="btn-sm btn-panel btn-percent-manager btn-percent-manager-child" data-edit-child-percentages="${f.id}"><span class="pct-manager-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 14.4 5l2.8-.1.8 2.7 2.2 1.8-1 2.6.6 2.7-2.5 1.3-1.3 2.5-2.7-.6-2.6 1-1.8-2.2-2.7-.8.1-2.8L4.8 12l1.5-2.4-.1-2.8 2.7-.8 1.8-2.2z"/><circle cx="9" cy="9" r="1.1"/><circle cx="15" cy="15" r="1.1"/><path d="m8.5 15.5 7-7"/></svg></span><span>مدیریت درصد زیرصندوق‌ها</span><span class="pct-manager-arrow" aria-hidden="true">‹</span></button>`:''}
             <input type="text" data-fund-name="${f.id}" value="${esc(f.name||'')}" placeholder="نام صندوق" style="flex:1;min-width:100px;background:var(--input-bg);border:1px solid var(--card-border);border-radius:10px;padding:8px 10px;color:var(--paper);font:13px Vazirmatn,sans-serif;">
             <button class="btn-sm btn-panel" data-edit-fund-name="${f.id}">ویرایش نام</button>
-            <button class="btn-sm btn-panel" data-edit-fund-pct="${f.id}">تغییر درصد</button>
             <button class="btn-sm btn-panel" data-add-child-fund="${f.id}">＋ زیرمجموعه</button>
             ${hasLink?`<button class="btn-sm btn-panel" disabled style="opacity:.55;">غیرقابل حذف</button>`:`<button class="btn-sm btn-rust" data-remove-fund="${f.id}">حذف</button>`}
           </div>
@@ -2052,6 +2124,7 @@ function renderFunds(){
 function renderWealth(){ try{ if(typeof activeTab!=='undefined' && activeTab==='wealth') switchTab('fund'); }catch(e){} }
 
 function renderLoans(){
+  try{ renderLoanRemindUI(); }catch(e){}
   document.getElementById('loanCountPill').textContent = `${toFa(STATE.loans.length)} وام`;
   document.getElementById('loanTotalRemain').textContent = fmtMoney(loansTotalRemain());
   document.getElementById('loanTotalMonthly').textContent = fmtMoney(loansTotalMonthly());
@@ -2751,6 +2824,81 @@ function editTransaction(id){
 function renderBudgets(){ /* بخش بودجه حذف شده */ }
 
 /* ============== settings (تنظیمات) ============== */
+function renderLoanRemindUI(){
+  const s = ensureReminderSettings();
+  const en = document.getElementById('loanRemindEnable');
+  if(en) en.checked = !!s.remindLoans;
+  const rl = document.getElementById('remLoansToggle');
+  if(rl) rl.checked = !!s.remindLoans;
+  const grid = document.getElementById('loanRemindDayGrid');
+  const hint = document.getElementById('loanRemindDayHint');
+  const summary = document.getElementById('loanRemindSummary');
+  const body = document.getElementById('loanRemindBody');
+  const chev = document.getElementById('loanRemindChevron');
+  const pref = Math.max(1, Math.min(31, parseInt(s.loanRemindDay,10)||1));
+  const t = todayJalali();
+  const dimNow = jalaliMonthDays(t.jy, t.jm);
+  const effNow = effectiveLoanRemindDay(t.jy, t.jm, pref);
+  const MONTH_FA = ['','فروردین','اردیبهشت','خرداد','تیر','مرداد','شهریور','مهر','آبان','آذر','دی','بهمن','اسفند'];
+  if(summary){
+    summary.textContent = (s.remindLoans?'روشن':'خاموش')+' · روز '+toFa(pref)+' (مؤثر این ماه: '+toFa(effNow)+')';
+  }
+  if(body){
+    body.style.display = window._loanRemindOpen ? 'block' : 'none';
+  }
+  if(chev) chev.textContent = window._loanRemindOpen ? '▲' : '▼';
+  if(!grid) return;
+  let htmlOut = '';
+  for(let d=1; d<=31; d++){
+    const soft = d > 30 ? ' soft' : '';
+    const active = d===pref ? ' active' : '';
+    htmlOut += '<button type="button" class="'+active+soft+'" data-loan-remind-day="'+d+'">'+toFa(d)+'</button>';
+  }
+  grid.innerHTML = htmlOut;
+  // بایند مستقیم — مطمئن از انتخاب روز
+  grid.onclick = function(ev){
+    const btn = ev.target && ev.target.closest ? ev.target.closest('[data-loan-remind-day]') : null;
+    if(!btn) return;
+    ev.preventDefault();
+    ev.stopPropagation();
+    let v = parseInt(btn.getAttribute('data-loan-remind-day'), 10);
+    if(!v || v<1) v = 1;
+    if(v>31) v = 31;
+    ensureReminderSettings();
+    STATE.settings.loanRemindDay = v;
+    saveState();
+    try{ scheduleAllReminders(); }catch(e){}
+    renderLoanRemindUI();
+    showToast('روز ترجیحی قسط: '+toFa(v));
+  };
+  if(en && !en._loanBound){
+    en._loanBound = true;
+    en.addEventListener('change', function(){
+      ensureReminderSettings();
+      STATE.settings.remindLoans = !!en.checked;
+      const b = document.getElementById('remLoansToggle'); if(b) b.checked = en.checked;
+      saveState();
+      try{ scheduleAllReminders(); }catch(e){}
+      renderLoanRemindUI();
+      showToast(en.checked ? 'یادآور قسط فعال شد' : 'یادآور قسط خاموش شد');
+    });
+  }
+  const head = document.getElementById('loanRemindToggleHead');
+  if(head && !head._loanBound){
+    head._loanBound = true;
+    head.addEventListener('click', function(ev){
+      ev.preventDefault();
+      window._loanRemindOpen = !window._loanRemindOpen;
+      renderLoanRemindUI();
+    });
+  }
+  if(hint){
+    const upcoming = nextLoanRemindDates(pref, 3).map(x=> toFa(x.jd)+' '+MONTH_FA[x.jm]+' ('+toFa(jalaliMonthDays(x.jy,x.jm))+'روزه)').join(' · ');
+    hint.innerHTML = 'ماه جاری <b>'+MONTH_FA[t.jm]+'</b> · '+toFa(dimNow)+' روز · مؤثر: <b>'+toFa(effNow)+'</b>'
+      +(pref>dimNow?' <span style="color:var(--gold)">(روز '+toFa(pref)+'→آخر ماه)</span>':'')
+      +'<br>بعدی‌ها: '+upcoming;
+  }
+}
 function renderSettings(){
   const cur = (STATE.settings && STATE.settings.currency) || 'toman';
   const theme = (STATE.settings && STATE.settings.theme) || 'light';
@@ -2776,8 +2924,7 @@ function renderSettings(){
   if(rl) rl.checked = !!s.remindLoans;
   const rp = document.getElementById('remPersonsToggle');
   if(rp) rp.checked = !!s.remindPersons;
-  const ld = document.getElementById('remLoanDay');
-  if(ld) ld.value = s.loanRemindDay || 1;
+  try{ renderLoanRemindUI(); }catch(e){}
 }
 
 async function hashPin(pin){
@@ -2934,6 +3081,27 @@ function jalaliToDateObj(jy,jm,jd,hour=9,minute=0){
   const k = jm <= 6 ? (jm-1)*31 + (jd-1) : 186 + (jm-7)*30 + (jd-1);
   return new Date(gy, 2, r.march + k, hour, minute, 0, 0);
 }
+function effectiveLoanRemindDay(jy, jm, preferred){
+  const pref = Math.max(1, Math.min(31, parseInt(preferred,10)||1));
+  const dim = jalaliMonthDays(jy, jm);
+  return Math.min(pref, dim);
+}
+/** ۱۲ ماه آینده شمسی: تاریخ مؤثر یادآور قسط با توجه به طول هر ماه */
+function nextLoanRemindDates(preferred, count){
+  const t = todayJalali();
+  const pref = Math.max(1, Math.min(31, parseInt(preferred,10)||1));
+  const n = Math.max(1, count||12);
+  const out = [];
+  let jy = t.jy, jm = t.jm;
+  for(let i=0; i<n+1 && out.length<n; i++){
+    const jd = effectiveLoanRemindDay(jy, jm, pref);
+    const at = jalaliToDateObj(jy, jm, jd, 10, 0);
+    if(at > new Date()) out.push({jy, jm, jd, at});
+    jm += 1;
+    if(jm > 12){ jm = 1; jy += 1; }
+  }
+  return out;
+}
 function ensureReminderSettings(){
   if(!STATE.settings) STATE.settings = {};
   const s = STATE.settings;
@@ -2943,7 +3111,7 @@ function ensureReminderSettings(){
   if(typeof s.remindPersons !== 'boolean') s.remindPersons = false;
   let day = parseInt(s.loanRemindDay, 10);
   if(!day || day < 1) day = 1;
-  if(day > 28) day = 28;
+  if(day > 31) day = 31;
   s.loanRemindDay = day;
   return s;
 }
@@ -3020,24 +3188,20 @@ function buildReminderNotifications(){
     });
   }
 
-  // اقساط — روز مشخص هر ماه (تقویم میلادی برای تکرار ساده)، ساعت ۱۰
+  // اقساط — بر اساس تقویم شمسی؛ روز مؤثر = min(روز ترجیحی، طول همان ماه)
   if(s.remindLoans && (STATE.loans||[]).length){
-    const day = s.loanRemindDay || 1;
-    let at = new Date();
-    at.setDate(day);
-    at.setHours(10, 0, 0, 0);
-    if(at <= now){
-      at.setMonth(at.getMonth()+1);
-      at.setDate(day);
-      at.setHours(10, 0, 0, 0);
-    }
+    const pref = s.loanRemindDay || 1;
+    const dates = nextLoanRemindDates(pref, 12);
     const totalM = typeof loansTotalMonthly==='function' ? loansTotalMonthly() : 0;
-    list.push({
-      id: notifNumericId('loan-monthly'),
-      title: 'موعد پرداخت قسط',
-      body: 'یادآوری اقساط ماهانه'+(totalM?(' · حدود '+fmtMoney(totalM)):''),
-      schedule: { at, every: 'month', count: 24 },
-      extra: { type:'loan' }
+    const MONTH_FA_SHORT = ['','فروردین','اردیبهشت','خرداد','تیر','مرداد','شهریور','مهر','آبان','آذر','دی','بهمن','اسفند'];
+    dates.forEach((item, idx)=>{
+      list.push({
+        id: notifNumericId('loan-j-'+item.jy+'-'+item.jm),
+        title: 'موعد پرداخت قسط',
+        body: 'قسط '+MONTH_FA_SHORT[item.jm]+' '+toFa(item.jy)+' · روز '+toFa(item.jd)+(totalM?(' · حدود '+fmtMoney(totalM)):''),
+        schedule: { at: item.at },
+        extra: { type:'loan', jy:item.jy, jm:item.jm, jd:item.jd }
+      });
     });
   }
 
@@ -4001,6 +4165,40 @@ if(t.id==='addMultiExpenseBtn'){ addMultiFundExpense(); return; }
   const toggleEnt = t.closest('[data-toggle-ent]');
   if(toggleEnt){ toggleEnt.closest('.ent-card').classList.toggle('open'); return; }
 
+  /* ---- batch percentage editor: expense funds and each parent's children ---- */
+  const batchExpenseBtn = t.closest('[data-edit-expense-percentages]');
+  const batchChildBtn = t.closest('[data-edit-child-percentages]');
+  if(batchExpenseBtn || batchChildBtn){
+    ensureDefaultFunds();
+    const isChildren = !!batchChildBtn;
+    const parentId = isChildren ? batchChildBtn.getAttribute('data-edit-child-percentages') : null;
+    const group = isChildren ? childFunds(parentId) : topExpenseFunds();
+    if(!group.length){ showToast('صندوقی برای تغییر درصد وجود ندارد'); return; }
+    const parent = isChildren ? findFund(parentId) : null;
+    const title = isChildren ? ('تغییر درصد زیرصندوق‌های «'+(parent?.name||'')+'»') : 'تغییر درصد صندوق‌های هزینه‌ای';
+    const old = document.getElementById('fundPctBatchModal'); if(old) old.remove();
+    const modal = document.createElement('div'); modal.id='fundPctBatchModal';
+    modal.className='fund-pct-modal';
+    modal.innerHTML=`<div class="fund-pct-dialog"><div class="fund-pct-titlebar"><div class="fund-pct-icon">％</div><h3 class="fund-pct-title">${esc(title)}</h3></div><p class="fund-pct-subtitle">درصد هر مورد را وارد کنید. مجموع باید دقیقاً <b>۱۰۰٪</b> باشد تا تغییرات ذخیره شوند.</p><div class="fund-pct-list">${group.map((f,index)=>`<label class="fund-pct-row"><span><span class="fund-pct-name">${esc(f.name||'بدون نام')}</span><span class="fund-pct-current">درصد فعلی <b>${toFa(f.percent||0)}٪</b></span></span><span class="fund-pct-inputwrap"><input type="number" min="0" max="100" step="0.1" inputmode="decimal" aria-label="درصد ${esc(f.name||'صندوق')}" data-batch-pct="${esc(f.id)}" value="${Number(f.percent)||0}"><b class="fund-pct-sign">٪</b></span></label>`).join('')}</div><div id="fundPctBatchSum" class="fund-pct-summary"><div class="fund-pct-summaryline"><span>مجموع تخصیص</span><strong class="fund-pct-total">—</strong></div><div class="fund-pct-track"><span></span></div></div><div id="fundPctBatchError" class="fund-pct-error" role="alert" aria-live="polite"></div><div class="fund-pct-actions"><button type="button" data-batch-pct-save class="btn-sm btn-panel">✓ ذخیره درصدها</button><button type="button" data-batch-pct-cancel class="btn-sm btn-rust">انصراف</button></div></div>`;
+    document.body.appendChild(modal);
+    const inputs=[...modal.querySelectorAll('[data-batch-pct]')];
+    const updateSum=()=>{const sum=inputs.reduce((a,i)=>a+(Number(i.value)||0),0);const box=modal.querySelector('#fundPctBatchSum');box.classList.toggle('good',Math.abs(sum-100)<=0.05);box.classList.toggle('over',sum>100.0001);box.querySelector('.fund-pct-total').textContent=toFa(Math.round(sum*10)/10)+'٪';box.querySelector('.fund-pct-track span').style.width=Math.min(100,Math.max(0,sum))+'%';return sum;};
+    inputs.forEach(i=>i.addEventListener('input',updateSum)); updateSum();
+    modal.addEventListener('click',ev=>{
+      if(ev.target===modal || ev.target.closest('[data-batch-pct-cancel]')){modal.remove();return;}
+      if(!ev.target.closest('[data-batch-pct-save]')) return;
+      const vals=inputs.map(i=>({id:i.getAttribute('data-batch-pct'),v:Number(i.value)}));
+      if(vals.some(x=>!Number.isFinite(x.v)||x.v<0)){modal.querySelector('#fundPctBatchError').textContent='همه درصدها باید عددی معتبر و صفر یا بیشتر باشند.';return;}
+      if(vals.some(x=>x.v>100)){modal.querySelector('#fundPctBatchError').textContent='خطا: درصد هیچ صندوقی نمی‌تواند بیشتر از ۱۰۰٪ باشد؛ مقدار ۱۱۰٪ معتبر نیست و اعمال نشد.';return;}
+      const sum=vals.reduce((a,x)=>a+x.v,0);
+      if(sum>100.0001){modal.querySelector('#fundPctBatchError').textContent='خطا: مجموع درصدها '+toFa(Math.round(sum*10)/10)+'٪ است و از ۱۰۰٪ بیشتر شده؛ این مقادیر اعمال نمی‌شوند. مجموع باید دقیقاً ۱۰۰٪ باشد.';return;}
+      if(Math.abs(sum-100)>0.05){modal.querySelector('#fundPctBatchError').textContent='مجموع درصدها '+toFa(Math.round(sum*10)/10)+'٪ است؛ برای ذخیره باید دقیقاً ۱۰۰٪ باشد.';return;}
+      vals.forEach(x=>{const f=findFund(x.id);if(f)f.percent=Math.round(x.v*10)/10;});
+      saveState(); renderFunds(); renderDashboard(); modal.remove(); showToast('درصدها با موفقیت ذخیره شدند');
+    });
+    return;
+  }
+
   /* ---- funds (درآمدی / هزینه‌ای) ---- */
   const fundFilterBtn = t.closest('[data-fund-filter]');
   if(fundFilterBtn){
@@ -4086,36 +4284,6 @@ if(t.id==='addMultiExpenseBtn'){ addMultiFundExpense(); return; }
     });
     // prefill
     setTimeout(()=>{ const inp=document.getElementById('f_name'); if(inp) inp.value=f.name||''; }, 50);
-    return;
-  }
-  const editPctBtn = t.closest('[data-edit-fund-pct]');
-  if(editPctBtn){
-    const fid = editPctBtn.getAttribute('data-edit-fund-pct');
-    const f = findFund(fid);
-    if(!f) return;
-    const isChild = !!f.parentId;
-    const parent = isChild ? findFund(f.parentId) : null;
-    const peers = isChild ? childFunds(f.parentId) : topExpenseFunds();
-    const peerSumOthers = peers.filter(x=>x.id!==f.id).reduce((s,x)=>s+(Number(x.percent)||0),0);
-    openFormSheet('تغییر درصد «'+(f.name||'')+'»',
-      (isChild?('سهم از صندوق «'+(parent&&parent.name||'')+'»'):'سهم از تخصیص درآمد')+' · جمع بقیه: '+toFa(Math.round(peerSumOthers*10)/10)+'٪ — مجموع گروه باید ۱۰۰٪ شود',
-      [{key:'percent', type:'number', label:'درصد جدید (۰ تا ۱۰۰)', placeholder:String(f.percent||0)}],
-      'تأیید و ثبت',
-      (vals)=>{
-        let v = Number(vals.percent);
-        if(!isFinite(v)){ setFieldError('percent','عدد معتبر وارد کنید'); return false; }
-        if(v<0) v=0; if(v>100) v=100;
-        v = Math.round(v*10)/10;
-        const newSum = peerSumOthers + v;
-        if(Math.abs(newSum-100)>0.05){
-          setFieldError('percent','با این مقدار جمع گروه '+toFa(Math.round(newSum*10)/10)+'٪ می‌شود؛ باید ۱۰۰٪ باشد (بقیه: '+toFa(Math.round(peerSumOthers*10)/10)+'٪)');
-          return false;
-        }
-        f.percent = v;
-        saveState(); renderFunds(); renderDashboard();
-        showToast('درصد ثبت شد');
-      }
-    );
     return;
   }
   if(t.id==='allocateBtn'){
@@ -4398,14 +4566,29 @@ document.addEventListener('change',function(e){
     showToast(t.checked ? 'یادآور اشخاص فعال شد' : 'یادآور اشخاص خاموش شد');
     return;
   }
-  if(t.id==='remLoanDay'){
+  if(t.id==='loanRemindEnable' || t.id==='remLoansToggle'){
     ensureReminderSettings();
-    let v = parseInt(t.value,10)||1;
-    if(v<1) v=1; if(v>28) v=28;
-    STATE.settings.loanRemindDay = v; t.value=v;
+    const on = !!t.checked;
+    STATE.settings.remindLoans = on;
+    const a = document.getElementById('loanRemindEnable'); if(a) a.checked = on;
+    const b = document.getElementById('remLoansToggle'); if(b) b.checked = on;
     saveState(); scheduleAllReminders();
+    try{ renderLoanRemindUI(); }catch(e){}
+    showToast(on ? 'یادآور قسط فعال شد' : 'یادآور قسط خاموش شد');
     return;
   }
+  const dayBtn = t.closest('[data-loan-remind-day]');
+  if(dayBtn){
+    ensureReminderSettings();
+    let v = parseInt(dayBtn.getAttribute('data-loan-remind-day'),10)||1;
+    if(v<1) v=1; if(v>31) v=31;
+    STATE.settings.loanRemindDay = v;
+    saveState(); scheduleAllReminders();
+    try{ renderLoanRemindUI(); }catch(e){}
+    showToast('روز ترجیحی قسط: '+toFa(v));
+    return;
+  }
+
 });
 document.addEventListener('input',function(e){
   if(!e.target) return;
