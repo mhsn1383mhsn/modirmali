@@ -65,10 +65,11 @@ try {
     if (!styles.includes('android:navigationBarColor')) {
       styles = styles.replace(
         /<\/style>\s*<\/resources>/,
-        `    <item name="android:statusBarColor">#02070D</item>
-        <item name="android:navigationBarColor">#02070D</item>
-        <item name="android:windowBackground">#02070D</item>
-        <item name="android:windowLightStatusBar">false</item>
+        `    <item name="android:statusBarColor">#EEF3F9</item>
+        <item name="android:navigationBarColor">#EEF3F9</item>
+        <item name="android:windowBackground">#EEF3F9</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
     </style>
 </resources>`
       );
