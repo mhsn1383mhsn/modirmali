@@ -26,11 +26,32 @@ body.theme-light{
   background: var(--bg-base);
 }
 .topbar{
-  background: var(--header-bg, var(--bg-base));
+  background: var(--bg-base);
+  padding-top: calc(12px + env(safe-area-inset-top, 0px));
+}
+/* پر کردن ناحیه status bar وقتی overlay است */
+body::before{
+  content:'';
+  position:fixed;
+  top:0; left:0; right:0;
+  height: env(safe-area-inset-top, 0px);
+  background: var(--bg-base);
+  z-index: 200;
+  pointer-events:none;
+}
+body::after{
+  content:'';
+  position:fixed;
+  bottom:0; left:0; right:0;
+  height: env(safe-area-inset-bottom, 0px);
+  background: var(--bg-base);
+  z-index: 200;
+  pointer-events:none;
 }
 
+
 :root{
-  color-scheme: dark;
+  color-scheme: light;
   --ink:#03070C; --panel:#0B1119; --panel-2:#101923; --panel-3:#162331;
   --brass:#178BFF; --brass-2:#69C7FF; --brass-dim:#0B4D8C;
   --paper:#F4FAFF; --muted:#7F91A2;
@@ -65,6 +86,7 @@ body.theme-light{
   --gate-bg:radial-gradient(900px 520px at 72% -8%, rgba(0,132,255,.16), transparent 62%),#02070D;
   --header-bg:rgba(3,7,12,.82);
 }
+body.theme-dark{ color-scheme: dark; }
 body.theme-light{
   color-scheme: light;
   --ink:#0B1220; --panel:#FFFFFF; --panel-2:#F4F7FB; --panel-3:#E8EEF6;
@@ -1324,13 +1346,21 @@ function themeColors(theme){
   const light = theme === 'light';
   return {
     light,
-    // پس‌زمینه اپ
     bg: light ? '#EEF3F9' : '#02070D',
-    // رنگ نوار وضعیت — روشن برای تم روشن تا آیکون‌های تیره خوانا باشند
-    status: light ? '#EEF3F9' : '#0B1119',
-    // Capacitor: DARK = آیکون تیره (برای پس‌زمینه روشن) | LIGHT = آیکون روشن (برای پس‌زمینه تیره)
+    status: light ? '#EEF3F9' : '#02070D',
+    // DARK = آیکون تیره روی زمینه روشن | LIGHT = آیکون روشن روی زمینه تیره
     style: light ? 'DARK' : 'LIGHT'
   };
+}
+function getStatusBar(){
+  try{
+    if(window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.StatusBar) return Capacitor.Plugins.StatusBar;
+    if(typeof capPlug === 'function') return capPlug('StatusBar');
+    if(window.Capacitor && typeof Capacitor.registerPlugin === 'function'){
+      return Capacitor.registerPlugin('StatusBar');
+    }
+  }catch(e){}
+  return null;
 }
 function syncSystemBars(theme){
   const c = themeColors(theme);
@@ -1338,35 +1368,33 @@ function syncSystemBars(theme){
     document.documentElement.style.backgroundColor = c.bg;
     document.body.style.backgroundColor = c.bg;
   }catch(e){}
-  const meta = document.querySelector('meta[name="theme-color"]');
-  if(meta) meta.setAttribute('content', c.status);
   try{
-    const SB = (window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.StatusBar)
-      || (typeof capPlug==='function' ? capPlug('StatusBar') : null);
-    if(!SB) return;
-    // نوار جدا از محتوا تا آیکون‌های سیستم زیر لایه سیاه نروند
-    if(SB.setOverlaysWebView){
-      try{ SB.setOverlaysWebView({ overlay: false }); }catch(e){}
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if(meta) meta.setAttribute('content', c.status);
+  }catch(e){}
+
+  const SB = getStatusBar();
+  if(!SB) return;
+
+  // overlay=true: رنگ نوار = پس‌زمینه صفحه (نه لایه مشکی جدا)
+  const apply = async ()=>{
+    try{
+      if(SB.setOverlaysWebView) await SB.setOverlaysWebView({ overlay: true });
+    }catch(e){}
+    try{
+      if(SB.setStyle) await SB.setStyle({ style: c.style });
+    }catch(e){
+      try{ if(SB.setStyle) await SB.setStyle({ style: c.light ? 'DARK' : 'LIGHT' }); }catch(e2){}
     }
-    // اول استایل آیکون، بعد رنگ پس‌زمینه
-    if(SB.setStyle){
-      try{ SB.setStyle({ style: c.style }); }catch(e){}
-      // بعضی نسخه‌ها Style.Dark / Style.Light می‌خواهند
-      try{
-        var Style = (window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.StatusBar && Capacitor.Plugins.StatusBar.Style) || null;
-        if(!Style && window.StatusBarStyle) Style = window.StatusBarStyle;
-        if(Style){
-          var s = c.light ? (Style.Dark || Style.DARK || 'DARK') : (Style.Light || Style.LIGHT || 'LIGHT');
-          SB.setStyle({ style: s });
-        }
-      }catch(e){}
-    }
-    if(SB.setBackgroundColor){
-      try{ SB.setBackgroundColor({ color: c.status }); }catch(e){}
-    }
-  }catch(e){ console.warn('syncSystemBars', e); }
+    // بعضی گوشی‌ها با overlay هنوز setBackgroundColor می‌خواهند
+    try{
+      if(SB.setBackgroundColor) await SB.setBackgroundColor({ color: c.status });
+    }catch(e){}
+  };
+  try{ apply(); }catch(e){ console.warn('syncSystemBars', e); }
 }
 function applyTheme(){
+
   const theme = (STATE && STATE.settings && STATE.settings.theme) || 'light';
   const light = theme === 'light';
   document.body.classList.toggle('theme-light', light);

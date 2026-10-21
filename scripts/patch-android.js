@@ -56,17 +56,19 @@ if (fs.existsSync(brandingAndroid) && fs.existsSync(resDir)) {
 }
 console.log('patch-android: OK');
 
-// System bar colors matching app theme (default dark; JS StatusBar updates at runtime)
+// System bars: light defaults (JS updates StatusBar style/color at runtime)
 try {
   const stylesDir = path.join(root, 'android', 'app', 'src', 'main', 'res', 'values');
   const stylesPath = path.join(stylesDir, 'styles.xml');
   if (fs.existsSync(stylesPath)) {
     let styles = fs.readFileSync(stylesPath, 'utf8');
-    if (!styles.includes('android:navigationBarColor')) {
+    // strip previous injected items if re-run
+    if (!styles.includes('financeSystemBars')) {
       styles = styles.replace(
         /<\/style>\s*<\/resources>/,
-        `    <item name="android:statusBarColor">#EEF3F9</item>
-        <item name="android:navigationBarColor">#EEF3F9</item>
+        `    <!-- financeSystemBars -->
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowBackground">#EEF3F9</item>
         <item name="android:windowLightStatusBar">true</item>
         <item name="android:windowLightNavigationBar">true</item>
@@ -74,7 +76,7 @@ try {
 </resources>`
       );
       fs.writeFileSync(stylesPath, styles);
-      console.log('patch-android: system bar colors set');
+      console.log('patch-android: system bars transparent + light icons');
     }
   }
 } catch (e) { console.warn('styles patch', e); }
