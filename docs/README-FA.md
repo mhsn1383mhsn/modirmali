@@ -1,6 +1,6 @@
 # مدیریت مالی — نسخه اندروید (APK)
 
-همان `index.html` شما (بدون تغییر در تم و طراحی) + ورود با گوگل + ذخیره ابری (Firebase).
+همان `index.html` شما (بدون تغییر در تم و طراحی) + ورود با گوگل + ذخیره ابری (Supabase).
 
 ## امکانات (فاز ۱ سند طراحی)
 - صندوق‌ها، تخصیص ثروت، درآمد/هزینه، اقساط، حساب‌وکتاب اشخاص، چک‌های بانکی
@@ -16,21 +16,11 @@
 
 قبل از ساخت APK، ورک‌فلوی خودکار تست محاسبات مالی (`tests/selftest.mjs`) اجرا می‌شود و اگر خطا باشد ساخت متوقف می‌شود. صفحه‌های حالت تمرکز هم در CI با `scripts/build-focus-pages.py` از `index.html` بازتولید می‌شوند؛ پس فقط `index.html` را ویرایش کن، کپی‌ها را دستی تغییر نده.
 
-## ورود با گوگل
-- Firebase همان پروژه `dayflow-2f339` است (فایل `firebase/google-services.json`) و شناسه برنامه `app.dayflow.planner` ماند تا ورود بدون تنظیم اضافه کار کند.
-- در Firebase Console: Authentication ← Sign-in method ← **Google** را فعال کنید و Firestore Database را بسازید.
-- قوانین پیشنهادی Firestore (هر کاربر فقط داده خودش):
-```
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{db}/documents {
-    match /users/{uid} {
-      allow read, write: if request.auth != null && request.auth.uid == uid;
-    }
-  }
-}
-```
-- برای اجرا در مرورگر (نه APK)، دامنه سایت را در Authentication ← Settings ← Authorized domains اضافه کنید.
+## ورود با گوگل (Supabase)
+- راه‌اندازی قدم‌به‌قدم در `supabase/README-ورود-گوگل.md` است؛ جدول با `supabase/schema.sql` ساخته می‌شود.
+- مقدارهای `SB_URL` و `SB_KEY` (کلید anon) در `www/index.html` تنظیم شده‌اند؛ کلید `service_role` را هرگز داخل اپ نگذار.
+- در Supabase: Authentication ← Providers ← **Google** را فعال کن و آدرس `app.dayflow.planner://login-callback` را در Redirect URLs اضافه کن.
+- در Google Cloud، آدرس `https://<PROJECT-REF>.supabase.co/auth/v1/callback` باید در Authorized redirect URIs باشد.
 
 ## همگام‌سازی
-هر تغییر پس از ۱.۵ ثانیه در Firestore ذخیره می‌شود؛ با ورود در دستگاه دیگر، داده همان حساب بارگذاری می‌شود.
+هر تغییر پس از ۱.۵ ثانیه در Supabase ذخیره می‌شود؛ با ورود در دستگاه دیگر، داده همان حساب بارگذاری می‌شود.
