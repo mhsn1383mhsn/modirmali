@@ -21,7 +21,8 @@ const code = [
   grab('jalCalLeap'), grab('jalaliMonthDays'), grab('parseTxDate'),
   grab('monthIncomeExpense'), grab('monthExpenseByCategory'), grab('budgetDaysLeft'),
   grab('g2d'), grab('toJalali'), grab('jalaliToDateObj'),
-  grab('uid'), grab('fundType'), grab('isExpenseFund'), grab('findFund'), grab('topExpenseFunds'), grab('childFunds'), grab('autoAllocateIncome'), grab('removeLinkedFundEntries'), grab('linkFundEntry'),
+  grab('uid'), grab('fundType'), grab('isExpenseFund'), grab('findFund'), grab('fundBalance'), grab('topExpenseFunds'), grab('childFunds'), grab('autoAllocateIncome'), grab('removeLinkedFundEntries'), grab('linkFundEntry'),
+  grab('ensureDefaultFunds'),
   `
   STATE.transactions = [
     {type:'expense',  amount:1000, date:'1404/07/05', category:'خوراک'},
@@ -61,7 +62,28 @@ const code = [
   eq(findFund('p1').entries.length + findFund('p2').entries.length, 2, 'تخصیص انجام شد');
   removeLinkedFundEntries(tx);
   eq(findFund('p1').entries.length + findFund('p2').entries.length + findFund('inc').entries.length, 0, 'حذف تراکنش باید تخصیص‌ها را هم برگرداند');
-  console.log('selftest: همه بررسی‌های مالی درست بود ✅');
+  // هدف نسخه ۲.۶: مبلغ هدف روی خود زیرصندوق است و مانده صندوق منبع پیشرفت است
+  STATE.funds = [
+    {id:'parent', type:'expense', percent:100, parentId:null, entries:[]},
+    {id:'child', type:'expense', percent:100, parentId:'parent', targetAmount:10000, entries:[{in:2500,out:0}]}
+  ];
+  eq(findFund('child').targetAmount,10000,'مبلغ هدف در خود زیرصندوق ذخیره می‌شود');
+  eq(fundBalance(findFund('child')),2500,'مانده زیرصندوق برای پیشرفت هدف');
+  const goalPct=Math.min(100,Math.round((fundBalance(findFund('child'))/findFund('child').targetAmount)*1000)/10);
+  eq(goalPct,25,'درصد پیشرفت هدف زیرصندوق');
+  findFund('child').entries.push({in:10000,out:0});
+  eq(fundBalance(findFund('child'))>=findFund('child').targetAmount,true,'هدف با رسیدن مانده به مبلغ هدف تکمیل می‌شود');
+  findFund('child').entries.push({in:0,out:4000});
+  eq(fundBalance(findFund('child')),8500,'هزینه از زیرصندوق پیشرفت هدف را کم می‌کند');
+  console.log('selftest: محاسبات مالی و هدف زیرصندوق درست بود ✅');
   `
 ].join('\n');
 new Function(code)();
+
+// نسخه ۲.۷: ساختار داشبورد شخصی و ترتیب منو باید در HTML موجود باشند.
+import { readFileSync } from 'node:fs';
+const appHtml = readFileSync(new URL('../www/index.html', import.meta.url), 'utf8');
+for (const token of ['data-dash-id="analysis"', 'id="dashCustomizeBtn"', 'function openDashboardCustomizeSheet()', 'function applyDashboardSettings()', 'function applyMenuOrder()', 'data-cust-profile="minimal"', 'data-cust-profile="full"']) {
+  if (!appHtml.includes(token)) throw new Error(`v2.7 feature missing: ${token}`);
+}
+console.log('selftest: امکانات داشبورد شخصی و ترتیب منو موجود است ✅');

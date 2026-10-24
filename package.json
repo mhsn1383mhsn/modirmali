@@ -1,6 +1,6 @@
 {
   "name": "finance-android",
-  "version": "1.0.0",
+  "version": "3.1.0",
   "private": true,
   "description": "مدیریت مالی — اپ اندروید با Capacitor",
   "scripts": {
@@ -8,7 +8,6 @@
     "android:sync": "cap sync android",
     "android:open": "cap open android",
     "android:apk": "cd android && ./gradlew assembleDebug",
-    "focus": "python scripts/build-focus-pages.py",
     "test": "node tests/selftest.mjs",
     "vendor": "node scripts/copy-vendor.js"
   },

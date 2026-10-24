@@ -14,7 +14,7 @@
 ۲. تب **Actions** ← «Build Finance APK» ← **Run workflow**.
 ۳. بعد از ۵ تا ۱۰ دقیقه، از بخش **Artifacts** فایل `Finance-apk` را دانلود کنید و `app-debug.apk` را نصب کنید.
 
-قبل از ساخت APK، ورک‌فلوی خودکار تست محاسبات مالی (`tests/selftest.mjs`) اجرا می‌شود و اگر خطا باشد ساخت متوقف می‌شود. صفحه‌های حالت تمرکز هم در CI با `scripts/build-focus-pages.py` از `index.html` بازتولید می‌شوند؛ پس فقط `index.html` را ویرایش کن، کپی‌ها را دستی تغییر نده.
+قبل از ساخت APK، ورک‌فلوی خودکار تست محاسبات مالی (`tests/selftest.mjs`) اجرا می‌شود و اگر خطا باشد ساخت متوقف می‌شود. فایل اصلی برنامه `www/index.html` است.
 
 ## ورود با گوگل
 - Firebase همان پروژه `dayflow-2f339` است (فایل `firebase/google-services.json`) و شناسه برنامه `app.dayflow.planner` ماند تا ورود بدون تنظیم اضافه کار کند.
