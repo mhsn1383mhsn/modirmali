@@ -2804,6 +2804,817 @@ body.theme-light .fc-goal-wrap.done{background:linear-gradient(135deg,rgba(15,14
 
 /* Themed native-style picker */
 .mf-selector-overlay{position:fixed;inset:0;z-index:15000;background:var(--sheet-overlay);backdrop-filter:blur(4px);display:none;align-items:flex-end;justify-content:center}.mf-selector-overlay.show{display:flex}.mf-selector-box{width:100%;max-width:520px;max-height:75vh;display:flex;flex-direction:column;background:var(--card-bg);border-radius:22px 22px 0 0;border-top:1px solid var(--card-border);padding:14px 14px calc(14px + env(safe-area-inset-bottom));direction:rtl;box-shadow:0 -8px 40px #0006}.mf-selector-title{text-align:center;font-size:13px;font-weight:900;color:var(--paper);padding:6px 0 12px;border-bottom:1px solid var(--line);margin-bottom:8px}.mf-selector-list{overflow-y:auto;flex:1;padding:4px}.mf-selector-item{display:flex;align-items:center;gap:10px;width:100%;padding:13px 14px;border-radius:12px;background:var(--panel-2);border:1px solid var(--line);color:var(--paper);font:700 13px 'Vazirmatn',sans-serif;text-align:right;margin-bottom:6px}.mf-selector-item.selected{background:rgba(23,139,255,.12);border-color:rgba(105,199,255,.35)}.mf-selector-item.selected:after{content:'✓';margin-right:auto;color:var(--accent-text)}.mf-selector-cancel{width:100%;margin-top:8px;padding:13px;border-radius:12px;border:1px solid var(--line);background:var(--panel-3);color:var(--muted);font:800 13px Vazirmatn,sans-serif}.select-trigger{width:100%;box-sizing:border-box;background:var(--input-bg);border:1px solid var(--card-border);border-radius:10px;padding:9px 11px;color:var(--paper);font:700 12px Vazirmatn,sans-serif;text-align:right;display:flex;align-items:center;justify-content:space-between;gap:8px}.st-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.st-arrow{opacity:.6}
+
+/* ============================================================
+   UNIFIED FILTERS — Premium (Patch 3)
+   برای: تراکنش‌ها، چک‌ها، اشخاص، تکرارشونده
+   ============================================================ */
+:root{
+  --ui-ease: cubic-bezier(.34,1.3,.64,1);
+  --ui-ease-soft: cubic-bezier(.4,0,.2,1);
+  --ui-accent: var(--accent-text);
+}
+
+/* ===== Tabs (Segmented) ===== */
+.ui-tabs{
+  position:relative;
+  display:grid;
+  grid-auto-flow:column;
+  grid-auto-columns:1fr;
+  gap:4px;
+  padding:4px;
+  margin:12px 0;
+  direction:rtl;
+  border-radius:16px;
+  background:var(--panel-2);
+  border:1px solid var(--line);
+  overflow:hidden;
+}
+.ui-tab{
+  position:relative;
+  z-index:1;
+  min-height:42px;
+  padding:0 10px;
+  border-radius:11px;
+  border:0;
+  background:transparent;
+  color:var(--muted);
+  font:800 12px 'Vazirmatn',sans-serif;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  transition:color .3s var(--ui-ease-soft);
+  white-space:nowrap;
+}
+.ui-tab.active{ color:var(--ui-accent); }
+
+/* نشانگر لغزان */
+.ui-tabs::before{
+  content:'';
+  position:absolute;
+  top:4px;
+  bottom:4px;
+  /* در RTL، inline-start همان لبهٔ راست نوار است. */
+  inset-inline-start:4px;
+  inset-inline-end:auto;
+  width:calc((100% - 8px - (var(--ui-tabs-gap, 4px) * (var(--ui-tabs-count, 3) - 1))) / var(--ui-tabs-count, 3));
+  border-radius:11px;
+  background:var(--card-bg);
+  box-shadow:0 2px 10px -2px rgba(0,0,0,.25);
+  transition:transform var(--ui-tabs-anim, .42s) var(--ui-ease), background .3s;
+  z-index:0;
+  animation:none;
+  transform:translateX(0);
+}
+body:not(.theme-light) .ui-tabs::before{
+  background:linear-gradient(145deg, rgba(23,139,255,.12), var(--card-bg));
+}
+body.theme-light .ui-tabs::before{
+  background:#fff;
+  box-shadow:0 2px 10px -2px rgba(22,50,90,.12);
+}
+/* موقعیت نشانگر با data-active-index (۰،۱،۲،...) */
+.ui-tabs[data-active-index="0"]::before{ transform:translateX(0); }
+.ui-tabs[data-active-index="1"]::before{ transform:translateX(calc(-100% - var(--ui-tabs-gap, 4px))); }
+.ui-tabs[data-active-index="2"]::before{ transform:translateX(calc(-200% - (var(--ui-tabs-gap, 4px) * 2))); }
+.ui-tabs[data-active-index="3"]::before{ transform:translateX(calc(-300% - (var(--ui-tabs-gap, 4px) * 3))); }
+.ui-tabs[data-active-index="4"]::before{ transform:translateX(calc(-400% - (var(--ui-tabs-gap, 4px) * 4))); }
+
+/* ===== Filters Container ===== */
+.ui-filters{
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  margin:12px 0;
+  padding:14px;
+  border-radius:16px;
+  background:var(--card-bg);
+  border:1px solid var(--card-border);
+  position:relative;
+  overflow:hidden;
+  transition:border-color .3s;
+}
+.ui-filters::before{
+  content:'';
+  position:absolute;
+  inset:0;
+  background:linear-gradient(135deg, rgba(23,139,255,.04), transparent 60%);
+  pointer-events:none;
+}
+.ui-filters:focus-within{ border-color:var(--filter-active-border); }
+
+/* ===== Group + Label ===== */
+.ui-filter-group{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  position:relative;
+}
+.ui-filter-label{
+  flex:0 0 46px;
+  font-size:10.5px;
+  font-weight:800;
+  color:var(--muted);
+  letter-spacing:.3px;
+  display:flex;
+  align-items:center;
+  gap:4px;
+}
+.ui-filter-label .ui-label-dot{
+  width:6px;height:6px;border-radius:50%;
+  background:var(--muted);
+  opacity:.4;
+  transition:background .3s, opacity .3s, transform .3s var(--ui-ease);
+}
+.ui-filter-group.has-active .ui-filter-label .ui-label-dot{
+  background:var(--ui-accent);
+  opacity:1;
+  transform:scale(1.2);
+}
+
+/* ===== Chips ===== */
+.ui-chips{
+  display:flex;
+  gap:6px;
+  overflow-x:auto;
+  padding:2px 2px 4px;
+  flex:1;
+  scrollbar-width:none;
+  -webkit-overflow-scrolling:touch;
+  scroll-behavior:smooth;
+}
+.ui-chips::-webkit-scrollbar{ display:none; }
+
+.ui-chip{
+  position:relative;
+  flex:0 0 auto;
+  min-height:34px;
+  padding:7px 13px;
+  border-radius:10px;
+  border:1px solid var(--line);
+  background:var(--panel-2);
+  color:var(--muted);
+  font:700 11px 'Vazirmatn',sans-serif;
+  cursor:pointer;
+  white-space:nowrap;
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  overflow:hidden;
+  transition:
+    background .28s var(--ui-ease-soft),
+    border-color .28s var(--ui-ease-soft),
+    color .28s var(--ui-ease-soft),
+    transform .18s var(--ui-ease-soft),
+    box-shadow .3s var(--ui-ease-soft);
+  opacity:1;
+}
+/* انیمیشن ورود فقط وقتی که گروه به‌تازگی باز شده باشد */
+.ui-chips.is-entering .ui-chip{
+  opacity:0;
+  animation:uiChipIn .45s var(--ui-ease) forwards;
+}
+.ui-chips.is-entering .ui-chip:nth-child(1){ animation-delay:.02s; }
+.ui-chips.is-entering .ui-chip:nth-child(2){ animation-delay:.06s; }
+.ui-chips.is-entering .ui-chip:nth-child(3){ animation-delay:.10s; }
+.ui-chips.is-entering .ui-chip:nth-child(4){ animation-delay:.14s; }
+.ui-chips.is-entering .ui-chip:nth-child(5){ animation-delay:.18s; }
+.ui-chips.is-entering .ui-chip:nth-child(6){ animation-delay:.22s; }
+.ui-chips.is-entering .ui-chip:nth-child(7){ animation-delay:.26s; }
+.ui-chips.is-entering .ui-chip:nth-child(8){ animation-delay:.30s; }
+
+@keyframes uiChipIn{
+  from{ opacity:0; transform:translateY(6px) scale(.94); }
+  to{ opacity:1; transform:translateY(0) scale(1); }
+}
+
+/* Ripple */
+.ui-chip::after{
+  content:'';
+  position:absolute;
+  inset:0;
+  border-radius:inherit;
+  background:radial-gradient(circle at var(--rip-x,50%) var(--rip-y,50%),
+    rgba(23,139,255,.28) 0%, transparent 60%);
+  opacity:0;
+  transition:opacity .4s var(--ui-ease-soft);
+  pointer-events:none;
+}
+.ui-chip.rippling::after{ opacity:1; transition:opacity 0s; }
+
+/* Active */
+.ui-chip.active{
+  background:linear-gradient(135deg,
+    color-mix(in srgb, var(--ui-accent) 16%, transparent),
+    color-mix(in srgb, var(--ui-accent) 6%, transparent));
+  border-color:color-mix(in srgb, var(--ui-accent) 45%, transparent);
+  color:var(--ui-accent);
+  font-weight:800;
+  box-shadow:
+    0 3px 10px -3px color-mix(in srgb, var(--ui-accent) 35%, transparent),
+    inset 0 1px 0 color-mix(in srgb, #fff 8%, transparent);
+}
+.ui-chip.active::before{
+  content:'';
+  position:absolute;
+  inset:-1px;
+  border-radius:inherit;
+  background:linear-gradient(135deg,
+    color-mix(in srgb, var(--ui-accent) 22%, transparent),
+    transparent 70%);
+  opacity:.5;
+  pointer-events:none;
+  animation:uiActiveGlow 3s ease-in-out infinite;
+}
+@keyframes uiActiveGlow{
+  0%,100%{ opacity:.35; }
+  50%{ opacity:.65; }
+}
+
+.ui-chip:hover{
+  border-color:color-mix(in srgb, var(--ui-accent) 30%, var(--line));
+  color:var(--paper);
+}
+.ui-chip:active{ transform:scale(.95); }
+
+/* Count badge */
+.ui-chip-count{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-width:18px;
+  height:16px;
+  padding:0 5px;
+  border-radius:6px;
+  font-size:9px;
+  font-weight:900;
+  letter-spacing:.2px;
+  background:rgba(255,255,255,.06);
+  color:var(--muted);
+  transition:background .3s, color .3s, transform .3s var(--ui-ease);
+}
+.ui-chip.active .ui-chip-count{
+  background:color-mix(in srgb, var(--ui-accent) 30%, transparent);
+  color:#fff;
+}
+.ui-chip-count.count-bump{ animation:uiCountBump .5s var(--ui-ease); }
+@keyframes uiCountBump{
+  0%{ transform:scale(1); }
+  40%{ transform:scale(1.35); }
+  100%{ transform:scale(1); }
+}
+
+/* Progress bar */
+.ui-filter-progress{
+  height:3px;
+  border-radius:2px;
+  background:var(--line);
+  overflow:hidden;
+  margin:-4px 0 0 0;
+  position:relative;
+}
+.ui-filter-progress > i{
+  display:block;
+  height:100%;
+  width:0%;
+  border-radius:2px;
+  background:linear-gradient(90deg, var(--ui-accent), color-mix(in srgb, var(--ui-accent) 50%, #7c3aed));
+  transition:width .5s var(--ui-ease);
+}
+
+/* ===== Light mode ===== */
+body.theme-light .ui-chip{ background:#F4F7FB; }
+body.theme-light .ui-chip:hover{ background:#EAF1F9; }
+body.theme-light .ui-chip.active{
+  background:linear-gradient(135deg,
+    color-mix(in srgb, var(--ui-accent) 12%, #fff),
+    color-mix(in srgb, var(--ui-accent) 4%, #fff));
+}
+body.theme-light .ui-chip-count{ background:rgba(22,50,90,.08); }
+
+/* ===== Reduced motion ===== */
+@media (prefers-reduced-motion: reduce){
+  .ui-chip,
+  .ui-chip.active::before,
+  .ui-chip-count.count-bump,
+  .ui-tabs::before{
+    animation:none !important;
+    transition:none !important;
+  }
+  .ui-chip{ opacity:1; }
+}
+
+/* ============================================================
+   FUND TABS — Premium (Patch 4)
+   ============================================================ */
+.fund-tabs{
+  position:relative;
+  display:grid;
+  grid-template-columns:repeat(3, 1fr);
+  gap:4px;
+  padding:4px;
+  margin:8px 0 14px;
+  border-radius:16px;
+  background:var(--panel-2);
+  border:1px solid var(--line);
+  overflow:hidden;
+}
+.fund-tab{
+  position:relative;
+  z-index:1;
+  min-height:52px;
+  padding:8px 10px;
+  border-radius:11px;
+  border:0;
+  background:transparent;
+  color:var(--muted);
+  font:800 12px 'Vazirmatn',sans-serif;
+  cursor:pointer;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:3px;
+  transition:color .3s var(--ui-ease-soft);
+  white-space:nowrap;
+  opacity:0;
+  animation:fundTabIn .45s var(--ui-ease) forwards;
+}
+.fund-tab:nth-child(1){ animation-delay:.03s; }
+.fund-tab:nth-child(2){ animation-delay:.08s; }
+.fund-tab:nth-child(3){ animation-delay:.13s; }
+
+@keyframes fundTabIn{
+  from{ opacity:0; transform:translateY(6px) scale(.96); }
+  to{ opacity:1; transform:translateY(0) scale(1); }
+}
+
+.fund-tab .ft-ic{
+  font-size:16px;
+  line-height:1;
+  transition:transform .35s var(--ui-ease);
+}
+.fund-tab .ft-lbl{
+  font-size:11px;
+  font-weight:800;
+  letter-spacing:.2px;
+}
+.fund-tab .ft-count{
+  position:absolute;
+  top:6px;
+  left:8px;
+  min-width:18px;
+  height:16px;
+  padding:0 5px;
+  border-radius:6px;
+  background:rgba(255,255,255,.06);
+  color:var(--muted);
+  font-size:9.5px;
+  font-weight:900;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  transition:background .3s, color .3s, transform .3s var(--ui-ease);
+}
+.fund-tab.active .ft-ic{ transform:scale(1.15); }
+.fund-tab.active .ft-count{
+  background:color-mix(in srgb, var(--ui-accent) 30%, transparent);
+  color:#fff;
+}
+.fund-tab .ft-count.count-bump{ animation:uiCountBump .5s var(--ui-ease); }
+
+/* Ripple */
+.fund-tab::after{
+  content:'';
+  position:absolute;
+  inset:0;
+  border-radius:inherit;
+  background:radial-gradient(circle at var(--rip-x,50%) var(--rip-y,50%),
+    rgba(23,139,255,.28) 0%, transparent 60%);
+  opacity:0;
+  transition:opacity .4s var(--ui-ease-soft);
+  pointer-events:none;
+}
+.fund-tab.rippling::after{ opacity:1; transition:opacity 0s; }
+
+/* Light tweaks */
+body.theme-light .fund-tab .ft-count{ background:rgba(22,50,90,.08); }
+
+@media (prefers-reduced-motion: reduce){
+  .fund-tab,
+  .fund-tab .ft-count.count-bump{ animation:none !important; transition:none !important; }
+  .fund-tab{ opacity:1; }
+}
+
+
+/* ============================================================
+   NEON SYSTEM v1.1 — نسخه اصلاح‌شده برای کلاس‌های واقعی برنامه
+   هدف: .check-filter (تب‌های صندوق و تراکنش‌ها)
+   ============================================================ */
+:root{
+  --neon-glow-1: rgba(23,139,255,.55);
+  --neon-glow-2: rgba(23,139,255,.28);
+  --neon-glow-3: rgba(23,139,255,.12);
+  --neon-transition: cubic-bezier(.34, 1.3, .64, 1);
+}
+body.theme-dark{
+  --neon-glow-1: rgba(105,199,255,.62);
+  --neon-glow-2: rgba(105,199,255,.32);
+  --neon-glow-3: rgba(105,199,255,.14);
+}
+.check-filter{
+  position: relative;
+  overflow: visible;
+  isolation: isolate;
+}
+.check-filter::after{
+  content: '';
+  position: absolute;
+  left: 20%;
+  right: 20%;
+  bottom: -10px;
+  height: 24px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center,var(--neon-glow-1) 0%,var(--neon-glow-2) 35%,var(--neon-glow-3) 60%,transparent 85%);
+  filter: blur(7px);
+  opacity: 0;
+  transform: scaleX(.3);
+  transition: opacity .45s var(--neon-transition),transform .45s var(--neon-transition);
+  pointer-events: none;
+  z-index: -1;
+}
+.check-filter::before{
+  content: '';
+  position: absolute;
+  left: 25%;
+  right: 25%;
+  top: -8px;
+  height: 16px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center,var(--neon-glow-2) 0%,transparent 70%);
+  filter: blur(4px);
+  opacity: 0;
+  transform: scaleX(.4);
+  transition: opacity .4s var(--neon-transition),transform .4s var(--neon-transition);
+  pointer-events: none;
+  z-index: -1;
+}
+.check-filter.active::after{
+  opacity: 1;
+  transform: scaleX(1);
+  animation: neonPulse 3s ease-in-out infinite;
+}
+.check-filter.active::before{
+  opacity: .8;
+  transform: scaleX(1);
+}
+@keyframes neonPulse{
+  0%, 100%{opacity:.55;transform:scaleX(.94) scaleY(.92);}
+  50%{opacity:1;transform:scaleX(1.04) scaleY(1.06);}
+}
+.check-filter.active{
+  transform: translateY(-1px);
+  box-shadow: 0 0 0 1px var(--filter-active-border),0 6px 18px -6px var(--neon-glow-1);
+}
+.ui-chip{overflow:visible;position:relative;}
+.ui-chip::before{
+  content:'';
+  position:absolute;
+  inset:-4px;
+  border-radius:inherit;
+  background:radial-gradient(ellipse at center,var(--neon-glow-2) 0%,transparent 70%);
+  filter:blur(5px);
+  opacity:0;
+  transition:opacity .4s var(--neon-transition);
+  pointer-events:none;
+  z-index:-1;
+}
+.ui-chip.active::before{opacity:1;}
+.ui-chip:hover::before{opacity:.5;}
+@keyframes cardBreathe{
+  0%,100%{box-shadow:var(--shadow-soft),0 0 20px -8px var(--neon-glow-2);}
+  50%{box-shadow:var(--shadow-soft),0 0 0 1px var(--neon-glow-3),0 0 32px -6px var(--neon-glow-1);}
+}
+.ent-card:hover,.check-card:hover,.pc-card:hover,.fund-parent-box:hover,.fund-child-box:hover{
+  animation:cardBreathe 2.5s ease-in-out infinite;
+}
+.btn-brass,.btn-sage,.btn-rust{position:relative;}
+.btn-brass::after,.btn-sage::after,.btn-rust::after{
+  content:'';
+  position:absolute;
+  inset:-6px;
+  border-radius:inherit;
+  opacity:0;
+  transition:opacity .35s ease;
+  pointer-events:none;
+  z-index:-1;
+  filter:blur(10px);
+}
+.btn-brass::after{background:radial-gradient(circle,rgba(23,139,255,.55) 0%,transparent 70%);}
+.btn-sage::after{background:radial-gradient(circle,rgba(85,214,190,.5) 0%,transparent 70%);}
+.btn-rust::after{background:radial-gradient(circle,rgba(255,102,128,.5) 0%,transparent 70%);}
+.btn-brass:hover::after,.btn-sage:hover::after,.btn-rust:hover::after{opacity:.75;}
+.sum-card{position:relative;overflow:hidden;}
+.sum-card::before{
+  content:'';
+  position:absolute;
+  top:-40%;right:-20%;
+  width:180px;height:180px;
+  border-radius:50%;
+  background:radial-gradient(circle,var(--neon-glow-3) 0%,transparent 65%);
+  opacity:.6;
+  pointer-events:none;
+  transition:opacity .5s ease,transform .6s ease;
+}
+.sum-card:hover::before{opacity:1;transform:scale(1.15);}
+.sum-card.sage::before{background:radial-gradient(circle,rgba(85,214,190,.18) 0%,transparent 65%);}
+.sum-card.rust::before{background:radial-gradient(circle,rgba(255,102,128,.18) 0%,transparent 65%);}
+.sum-card.clay::before{background:radial-gradient(circle,rgba(90,169,255,.18) 0%,transparent 65%);}
+.sum-card.gold::before{background:radial-gradient(circle,rgba(227,179,65,.18) 0%,transparent 65%);}
+.fcal-mc.sel,.jcal-day.selected{
+  box-shadow:0 0 0 2px var(--brass-2),0 0 24px -4px var(--neon-glow-1),0 0 12px -2px var(--neon-glow-2);
+  animation:dayBreathe 2.5s ease-in-out infinite;
+}
+@keyframes dayBreathe{
+  0%,100%{box-shadow:0 0 0 2px var(--brass-2),0 0 16px -6px var(--neon-glow-1);}
+  50%{box-shadow:0 0 0 2px var(--brass-2),0 0 28px -2px var(--neon-glow-1),0 0 16px 0 var(--neon-glow-2);}
+}
+@keyframes warnPulse{
+  0%,100%{box-shadow:0 0 0 0 rgba(227,179,65,0);}
+  50%{box-shadow:0 0 0 3px rgba(227,179,65,.18);}
+}
+.percent-warn,.rec-banner{animation:warnPulse 3s ease-in-out infinite;}
+@keyframes dangerPulse{
+  0%,100%{box-shadow:0 0 0 0 rgba(255,102,128,0);}
+  50%{box-shadow:0 0 0 3px rgba(255,102,128,.2);}
+}
+.check-tag.bad,.check-tag.warn{animation:dangerPulse 2.8s ease-in-out infinite;}
+@media (prefers-reduced-motion: reduce){
+  .check-filter::before,.check-filter::after,.ui-chip::before,
+  .ent-card:hover,.check-card:hover,.pc-card:hover,.fund-parent-box:hover,.fund-child-box:hover,
+  .fcal-mc.sel,.jcal-day.selected,.percent-warn,.rec-banner,.check-tag.bad,.check-tag.warn{
+    animation:none !important;
+    transition:none !important;
+  }
+  .check-filter.active::after,.check-filter.active::before,.ui-chip.active::before{
+    opacity:1 !important;
+    transform:scaleX(1) !important;
+  }
+}
+/* پایان NEON SYSTEM v1.1 */
+
+
+
+/* ============================================================
+   MODULE: FUNDS THEME
+   تمام تم بصری بخش صندوق‌ها
+   ============================================================ */
+
+/* ----- ۱) کانتینر گرید پرنت‌ها ----- */
+.fund-box-grid{display:grid;grid-template-columns:1fr;gap:12px;margin-top:12px}
+
+/* ----- ۲) کارت صندوق پرنت (اصلی) ----- */
+.fund-parent-box{background:var(--card-bg);border:1px solid var(--card-border);border-radius:16px;padding:12px;box-shadow:var(--shadow-soft)}
+.fund-parent-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+.fund-parent-head .fp-name{font-weight:900;font-size:14px;flex:1;min-width:120px;color:var(--paper)}
+.fund-parent-head .fp-bal{font-weight:900;font-size:13px}
+.fund-parent-head .fp-pct{font-size:11px;font-weight:800;color:var(--brass-2);background:var(--panel-2);padding:4px 10px;border-radius:20px}
+.fund-parent-head .fp-pct{display:none!important}
+
+/* ----- ۳) زیرصندوق‌ها (چایلد) ----- */
+.fund-child-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+@media(max-width:380px){.fund-child-grid{grid-template-columns:1fr}}
+.fund-child-box{background:var(--panel-2);border:1px solid var(--line);border-radius:12px;padding:10px}
+.fund-child-box .fc-name{font-weight:800;font-size:12.5px;color:var(--paper);margin-bottom:4px}
+.fund-child-box .fc-meta{font-size:11px;color:var(--muted);line-height:1.7}
+.fund-child-box .fc-bal{font-weight:900;font-size:12.5px;margin-top:4px}
+
+/* ----- ۴) پیل نوع صندوق (درآمدی / هزینه‌ای) ----- */
+.fund-type-pill{font-size:10px;font-weight:800;padding:3px 8px;border-radius:20px;margin-right:6px}
+.fund-type-pill.inc{background:var(--sage-bg);color:var(--sage)}
+.fund-type-pill.exp{background:var(--rust-bg);color:var(--rust)}
+
+/* ----- ۵) دکمه‌های داخل کارت ----- */
+.fund-box-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.fund-income-list{display:grid;gap:10px;margin-top:10px}
+
+/* ----- ۶) بج درصد (کنار نام صندوق) ----- */
+.pct-badge{display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:10px;background:linear-gradient(135deg,color-mix(in srgb,var(--brass-2) 18%,transparent),color-mix(in srgb,var(--brass) 10%,transparent));border:1px solid color-mix(in srgb,var(--brass-2) 32%,transparent);color:var(--accent-text);font-size:11.5px;font-weight:900;line-height:1;white-space:nowrap;flex-shrink:0;transition:background .25s ease,border-color .25s ease}
+.pct-badge .pct-badge-icon{width:16px;height:16px;border-radius:5px;background:color-mix(in srgb,var(--brass-2) 26%,transparent);color:var(--accent-text);display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:900;line-height:1;flex-shrink:0}
+.pct-badge .pct-badge-val{font-size:12.5px;font-weight:900}
+.pct-badge .pct-badge-sign{font-size:10.5px;font-weight:800;opacity:.75;margin-right:-2px}
+.pct-badge.pct-badge-child{padding:4px 8px;font-size:11px;border-radius:8px}
+.pct-badge.pct-badge-child .pct-badge-icon{width:14px;height:14px;font-size:8px}
+.pct-badge.pct-badge-child .pct-badge-val{font-size:11.5px}
+body.theme-dark .pct-badge{background:linear-gradient(135deg,rgba(105,199,255,.18),rgba(23,139,255,.08));border-color:rgba(105,199,255,.35);color:#8DD8FF}
+body.theme-dark .pct-badge .pct-badge-icon{background:rgba(105,199,255,.24)}
+body.theme-light .pct-badge{background:linear-gradient(135deg,rgba(11,107,196,.10),rgba(11,107,196,.05));border-color:rgba(11,107,196,.22);color:var(--brass)}
+body.theme-light .pct-badge .pct-badge-icon{background:rgba(11,107,196,.14);color:var(--brass)}
+
+/* ----- ۷) هدف مالی در زیرصندوق ----- */
+.fc-goal-wrap{margin-top:9px;padding:9px 10px;border-radius:10px;background:var(--panel-3);border:1px solid var(--line)}
+.fc-goal-wrap.done{background:linear-gradient(135deg,rgba(85,214,190,.10),var(--panel-3));border-color:rgba(85,214,190,.30)}
+.fc-goal-head{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:7px}
+.fc-goal-label{font-size:10px;font-weight:800;color:var(--muted);display:flex;align-items:center;gap:4px}
+.fc-goal-wrap.done .fc-goal-label{color:var(--sage)}
+.fc-goal-badge{font-size:9px;font-weight:800;padding:2px 6px;border-radius:5px;background:var(--sage-bg);color:var(--sage);white-space:nowrap}
+.fc-goal-track{height:7px;border-radius:5px;background:rgba(128,128,128,.16);overflow:hidden;margin-bottom:6px}
+.fc-goal-track>i{display:block;height:100%;border-radius:5px;background:linear-gradient(90deg,var(--brass-2),var(--brass));transition:width .6s ease}
+.fc-goal-wrap.done .fc-goal-track>i{background:linear-gradient(90deg,var(--sage),#3FBFA8)}
+.fc-goal-meta{display:flex;justify-content:space-between;gap:6px;font-size:9.5px;color:var(--muted);font-weight:700;flex-wrap:wrap}
+.fc-goal-meta b{font-weight:900;color:var(--paper)}
+.fc-goal-btn{width:100%;margin-top:7px;padding:7px 10px;border-radius:8px;border:1px solid var(--filter-active-border);background:var(--filter-active-bg);color:var(--accent-text);font-size:10.5px;font-weight:800;cursor:pointer;transition:background .2s ease}
+.fc-goal-btn:hover{background:var(--filter-active-border)}
+.fc-goal-btn:active{transform:scale(.97)}
+body.theme-light .fc-goal-wrap{background:var(--row-bg);border-color:var(--line)}
+body.theme-light .fc-goal-wrap.done{background:linear-gradient(135deg,rgba(15,143,114,.08),var(--row-bg));border-color:rgba(15,143,114,.25)}
+
+/* ----- ۸) هشدار درصد ----- */
+.percent-warn{font-size:10.5px;color:var(--gold);background:var(--gold-bg);border:1px solid rgba(227,179,65,.22);border-radius:10px;padding:7px 10px;margin-bottom:10px}
+body.theme-light .percent-warn{background:rgba(166,124,0,.08);border-color:rgba(166,124,0,.22);color:#8A6A00}
+
+/* ----- ۹) ماندهٔ صندوق (بج) — پاک‌سازی هاله ----- */
+.eh-badge,.fund-parent-head .eh-badge,.fund-child-box .fc-bal{box-shadow:none!important;outline:none!important;text-shadow:none!important;filter:none!important;border:none!important}
+.eh-badge{background:var(--panel-2)!important;color:var(--paper)!important;border-radius:8px!important;padding:5px 10px!important;font-weight:800!important;font-size:11px!important;letter-spacing:.2px;display:inline-flex;align-items:center;justify-content:center;gap:4px}
+.eh-badge.pos{background:var(--sage-bg)!important;color:var(--sage)!important}
+.eh-badge.neg{background:var(--rust-bg)!important;color:var(--rust)!important}
+.eh-badge.zero{background:var(--panel-2)!important;color:var(--muted)!important}
+.fund-child-box .fc-bal{display:inline-block!important;padding:4px 8px!important;border-radius:7px!important;font-size:11.5px!important;font-weight:800!important}
+body.theme-light .eh-badge{background:#F4F7FB!important;color:var(--paper)!important}
+body.theme-light .eh-badge.pos{background:rgba(15,143,114,.12)!important;color:var(--sage)!important}
+body.theme-light .eh-badge.neg{background:rgba(201,58,82,.10)!important;color:var(--rust)!important}
+body.theme-light .eh-badge.zero{background:#F4F7FB!important;color:var(--muted)!important}
+
+/* ----- ۱۰) انیمیشن ورود صندوق‌ها (بدون تأخیر پله‌ای) ----- */
+@keyframes fundCardIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.view[data-view="fund"].active .fund-parent-box{animation:fundCardIn .28s cubic-bezier(.22,1,.36,1) both}
+.view[data-view="fund"].active .fund-child-box{animation:none!important;opacity:1!important;transform:none!important}
+
+/* ----- ۱۱) احترام به prefers-reduced-motion ----- */
+@media(prefers-reduced-motion:reduce){.view[data-view="fund"].active .fund-parent-box{animation:none!important;opacity:1!important}}
+
+/* ----- ۱۲) حالت فشرده ----- */
+html.density-compact .fund-parent-box{padding:10px}
+html.density-compact .fund-child-box{padding:8px}
+html.density-compact .fund-child-grid{gap:6px}
+
+/* ----- ۱۳) حالت فونت بزرگ ----- */
+html.font-size-large .fund-parent-head .fp-name{font-size:15px}
+html.font-size-large .fund-child-box .fc-name{font-size:13.5px}
+
+</style>
+<link rel="stylesheet" href="animations.css">
+<style>
+/* ============================================================
+   FUND GLOW — نورپردازی و انیمیشن صندوق‌ها
+   فقط روی .fund-parent-box و .fund-child-box
+   ============================================================ */
+.fund-parent-box,
+.fund-child-box{
+  position: relative;
+  isolation: isolate;
+  transition:
+    transform .35s cubic-bezier(.16,1,.3,1),
+    box-shadow .45s cubic-bezier(.4,0,.2,1),
+    border-color .35s ease,
+    background .45s ease;
+  will-change: transform, box-shadow;
+}
+.fund-parent-box::before{
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: conic-gradient(
+    from var(--glow-angle, 0deg),
+    rgba(105,199,255,0) 0%,
+    rgba(105,199,255,.55) 18%,
+    rgba(85,214,190,.45) 32%,
+    rgba(105,199,255,0) 50%,
+    rgba(105,199,255,0) 100%
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: .55;
+  z-index: 1;
+  pointer-events: none;
+  animation: fundGlowRotate 6s linear infinite;
+  filter: blur(.3px);
+}
+@keyframes fundGlowRotate{ to{ --glow-angle: 360deg; } }
+@property --glow-angle{ syntax: '<angle>'; initial-value: 0deg; inherits: false; }
+.fund-parent-box::after{
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background:
+    radial-gradient(120% 80% at 0% 0%, rgba(105,199,255,.10), transparent 55%),
+    radial-gradient(100% 70% at 100% 100%, rgba(85,214,190,.08), transparent 60%);
+  opacity: 0;
+  transition: opacity .6s ease;
+  pointer-events: none;
+  z-index: 0;
+}
+.fund-parent-box:hover{
+  transform: translateY(-2px);
+  box-shadow: 0 14px 34px -16px rgba(47,140,255,.45), 0 6px 18px -8px rgba(0,0,0,.35);
+  border-color: rgba(105,199,255,.35);
+}
+.fund-parent-box:hover::after{ opacity: 1; }
+.fund-parent-box:hover::before{ opacity: .95; }
+.fund-child-box{
+  position: relative;
+  background: linear-gradient(160deg, var(--panel-2) 0%, var(--panel-3) 100%);
+  border: 1px solid var(--line);
+  overflow: hidden;
+}
+.fund-child-box::before{
+  content: '';
+  position: absolute;
+  inset: -40% -40% auto auto;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(105,199,255,.30) 0%, rgba(85,214,190,.18) 35%, rgba(105,199,255,0) 70%);
+  filter: blur(8px);
+  opacity: .55;
+  pointer-events: none;
+  z-index: 0;
+  animation: fundChildPulse 4.5s ease-in-out infinite;
+}
+@keyframes fundChildPulse{ 0%,100%{ opacity: .35; transform: scale(1); } 50%{ opacity: .75; transform: scale(1.15); } }
+.fund-child-box::after{
+  content: '';
+  position: absolute;
+  top: 0; bottom: 0;
+  left: -30%;
+  width: 30%;
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,.10) 50%, transparent 100%);
+  transform: skewX(-12deg);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 1;
+  transition: opacity .2s ease;
+}
+.fund-child-box:hover{
+  transform: translateY(-2px) scale(1.008);
+  border-color: rgba(105,199,255,.40);
+  box-shadow: 0 12px 26px -14px rgba(47,140,255,.55), 0 4px 14px -6px rgba(0,0,0,.30);
+}
+.fund-child-box:hover::after{ opacity: 1; animation: fundChildShine 1.1s ease-out; }
+@keyframes fundChildShine{ 0%{ left: -30%; } 100%{ left: 130%; } }
+.fund-child-box .fc-name{
+  position: relative;
+  display: inline-block;
+  transition: color .3s ease, text-shadow .35s ease;
+  z-index: 2;
+}
+.fund-child-box:hover .fc-name{ color: #EAF6FF; text-shadow: 0 0 14px rgba(105,199,255,.45); }
+.fund-child-box .pct-badge{
+  position: relative;
+  z-index: 2;
+  transition: transform .3s cubic-bezier(.34,1.3,.64,1), box-shadow .4s ease;
+}
+.fund-child-box:hover .pct-badge{ transform: scale(1.06); box-shadow: 0 0 12px rgba(105,199,255,.45); }
+.fund-child-box .fc-bal{ position: relative; z-index: 2; transition: box-shadow .4s ease; }
+.fund-child-box:hover .fc-bal{ box-shadow: 0 0 0 1px rgba(105,199,255,.35), 0 0 14px rgba(105,199,255,.25) !important; }
+.fund-parent-box.fund-glow-new,
+.fund-child-box.fund-glow-new{ animation: fundGlowNewIn .8s cubic-bezier(.34,1.3,.64,1) both; }
+@keyframes fundGlowNewIn{
+  0%{ opacity: 0; transform: scale(.94) translateY(8px); box-shadow: 0 0 0 0 rgba(105,199,255,0); }
+  50%{ opacity: 1; box-shadow: 0 0 0 6px rgba(105,199,255,.18), 0 0 28px rgba(105,199,255,.45); }
+  100%{ opacity: 1; transform: scale(1) translateY(0); box-shadow: 0 0 0 0 rgba(105,199,255,0); }
+}
+.fund-parent-box.fund-glow-press,
+.fund-child-box.fund-glow-press{ animation: fundPressPulse .32s cubic-bezier(.4,0,.2,1); }
+@keyframes fundPressPulse{ 0%{ transform: scale(1); } 45%{ transform: scale(.985); } 100%{ transform: scale(1); } }
+.fund-child-box.fund-glow-complete::before{ animation: fundCompleteFlash 1.2s ease-out both; }
+@keyframes fundCompleteFlash{
+  0%{ opacity: .35; transform: scale(1); }
+  50%{ opacity: 1; transform: scale(1.6); background: radial-gradient(circle, rgba(85,214,190,.55) 0%, rgba(105,199,255,.25) 45%, rgba(105,199,255,0) 75%); }
+  100%{ opacity: .55; transform: scale(1); }
+}
+.fund-parent-box .fund-type-pill{ position: relative; z-index: 2; transition: box-shadow .35s ease, transform .3s ease; }
+.fund-parent-box:hover .fund-type-pill{ transform: translateY(-1px); }
+.fund-parent-box:hover .fund-type-pill.inc{ box-shadow: 0 0 12px rgba(85,214,190,.45); }
+.fund-parent-box:hover .fund-type-pill.exp{ box-shadow: 0 0 12px rgba(255,102,128,.35); }
+.fund-parent-box .eh-badge{ position: relative; z-index: 2; transition: box-shadow .4s ease, transform .3s ease; }
+.fund-parent-box:hover .eh-badge{ transform: translateY(-1px); }
+@media (prefers-reduced-motion: reduce){
+  .fund-parent-box::before, .fund-child-box::before, .fund-child-box::after{ animation: none !important; }
+  .fund-parent-box:hover, .fund-child-box:hover{ transform: none; }
+  .fund-parent-box.fund-glow-new, .fund-child-box.fund-glow-new,
+  .fund-parent-box.fund-glow-press, .fund-child-box.fund-glow-press{ animation: none !important; }
+}
+body.theme-light .fund-parent-box::before{ opacity: .35; }
+body.theme-light .fund-parent-box:hover::before{ opacity: .7; }
+body.theme-light .fund-child-box::before{ opacity: .25; }
+body.theme-light .fund-child-box:hover .fc-name{ color: var(--accent-text); text-shadow: 0 0 10px rgba(11,107,196,.25); }
 </style>
 </head>
 <body class="theme-light">
@@ -2847,14 +3658,24 @@ body.theme-light .fc-goal-wrap.done{background:linear-gradient(135deg,rgba(15,14
   <div class="view" data-view="fund">
     <div class="sec-h"><h2>صندوق‌ها</h2><span class="count-pill" id="fundCountPill">۰ صندوق</span></div>
     <div id="wealthPercentWarn"></div>
-    <div class="check-filter-row" style="margin-top:4px;">
-      <button class="check-filter active" data-fund-filter="all">همه</button>
-      <button class="check-filter" data-fund-filter="income">درآمدی</button>
-      <button class="check-filter" data-fund-filter="expense">هزینه‌ای</button>
+    <div class="ui-tabs fund-tabs" id="fundTabsBar" data-active-index="0">
+      <button class="ui-tab fund-tab active" data-fund-filter="all">
+        <span class="ft-count" data-fund-count="all">۰</span>
+        <span class="ft-ic">🗂️</span>
+        <span class="ft-lbl">همه</span>
+      </button>
+      <button class="ui-tab fund-tab" data-fund-filter="income">
+        <span class="ft-count" data-fund-count="income">۰</span>
+        <span class="ft-ic">🟢</span>
+        <span class="ft-lbl">درآمدی</span>
+      </button>
+      <button class="ui-tab fund-tab" data-fund-filter="expense">
+        <span class="ft-count" data-fund-count="expense">۰</span>
+        <span class="ft-ic">🔴</span>
+        <span class="ft-lbl">هزینه‌ای</span>
+      </button>
     </div>
     <div class="action-grid" style="margin-top:8px;">
-      <button class="btn btn-sage" id="addIncomeFundBtn">＋ صندوق درآمدی</button>
-      <button class="btn btn-rust" id="addExpenseFundBtn">＋ صندوق هزینه‌ای</button>
       <button class="btn btn-panel" id="transferExpenseBtn" style="grid-column:1/-1;">⇄ انتقال بین صندوق‌ها</button>
       <button class="btn btn-panel" id="addMultiExpenseBtn" style="grid-column:1/-1;">⚡ هزینه چندصندوقی — تیک و آبشاری</button>
     </div>
@@ -2922,11 +3743,17 @@ body.theme-light .fc-goal-wrap.done{background:linear-gradient(135deg,rgba(15,14
       <button id="personLegacyWarnClose" style="margin-top:6px;display:block;background:transparent;border:1px solid var(--line);color:var(--muted);border-radius:8px;padding:6px 12px;font:11px Vazirmatn,sans-serif;cursor:pointer;">متوجه شدم، ببند</button>
     </div>
     <input class="check-search" id="personSearch" type="search" placeholder="جست‌وجو نام یا شماره تماس…">
-    <div class="check-filter-row" style="margin-top:4px;">
-      <button class="check-filter active" data-person-filter="all">همه</button>
-      <button class="check-filter" data-person-filter="debtor">بدهکار</button>
-      <button class="check-filter" data-person-filter="creditor">بستانکار</button>
-      <button class="check-filter" data-person-filter="settled">تسویه</button>
+    <div class="ui-filters">
+      <div class="ui-filter-group" data-ui-group="person">
+        <span class="ui-filter-label"><span class="ui-label-dot"></span>وضعیت</span>
+        <div class="ui-chips">
+          <button class="ui-chip active" data-person-filter="all">همه <span class="ui-chip-count" data-count-for="person:all">۰</span></button>
+          <button class="ui-chip" data-person-filter="debtor">بدهکار <span class="ui-chip-count" data-count-for="person:debtor">۰</span></button>
+          <button class="ui-chip" data-person-filter="creditor">بستانکار <span class="ui-chip-count" data-count-for="person:creditor">۰</span></button>
+          <button class="ui-chip" data-person-filter="settled">تسویه <span class="ui-chip-count" data-count-for="person:settled">۰</span></button>
+        </div>
+      </div>
+      <div class="ui-filter-progress"><i id="personFilterProgressBar"></i></div>
     </div>
     <div id="personList"></div>
     <button class="add-inline-btn" id="addPersonBtn">➕ افزودن شخص جدید</button>
@@ -2946,12 +3773,18 @@ body.theme-light .fc-goal-wrap.done{background:linear-gradient(135deg,rgba(15,14
       <button class="btn btn-panel" id="addPaidCheckBtn">＋ ثبت چک پرداختی</button>
     </div>
     <input class="check-search" id="checkSearch" type="search" placeholder="جست‌وجو نام، شماره چک، بانک یا شناسه صیادی…">
-    <div class="check-filter-row">
-      <button class="check-filter active" data-check-filter="all">همه چک‌ها</button>
-      <button class="check-filter" data-check-filter="received">دریافتی</button>
-      <button class="check-filter" data-check-filter="paid">پرداختی</button>
-      <button class="check-filter" data-check-filter="open">باز / تعیین‌تکلیف‌نشده</button>
-      <button class="check-filter" data-check-filter="overdue">سررسیدگذشته</button>
+    <div class="ui-filters">
+      <div class="ui-filter-group has-active" data-ui-group="check">
+        <span class="ui-filter-label"><span class="ui-label-dot"></span>وضعیت</span>
+        <div class="ui-chips">
+          <button class="ui-chip active" data-check-filter="all">همه <span class="ui-chip-count" data-count-for="check:all">۰</span></button>
+          <button class="ui-chip" data-check-filter="received">دریافتی <span class="ui-chip-count" data-count-for="check:received">۰</span></button>
+          <button class="ui-chip" data-check-filter="paid">پرداختی <span class="ui-chip-count" data-count-for="check:paid">۰</span></button>
+          <button class="ui-chip" data-check-filter="open">باز <span class="ui-chip-count" data-count-for="check:open">۰</span></button>
+          <button class="ui-chip" data-check-filter="overdue">سررسیدگذشته <span class="ui-chip-count" data-count-for="check:overdue">۰</span></button>
+        </div>
+      </div>
+      <div class="ui-filter-progress"><i id="checkFilterProgressBar"></i></div>
     </div>
     <div id="checkList"></div>
     <button class="add-inline-btn" id="exportChecksBtn">⇩ خروجی CSV از فهرست چک‌ها</button>
@@ -2960,22 +3793,32 @@ body.theme-light .fc-goal-wrap.done{background:linear-gradient(135deg,rgba(15,14
   <!-- ===== TRANSACTIONS (تراکنش‌ها) ===== -->
   <div class="view" data-view="cashflow">
     <div class="sec-h"><h2>💹 تراکنش‌ها</h2><span class="count-pill" id="ieCountPill">۰ تراکنش</span></div>
-    <div class="check-filter-row" style="margin-top:4px;">
-      <button class="check-filter active" data-ie-view="list">📋 لیست</button>
-      <button class="check-filter" data-ie-view="calendar">📅 تقویم</button>
-      <button class="check-filter" data-ie-view="recurring">🔄 تکرارشونده</button>
+    <div class="ui-tabs" id="ieTabsBar" data-active-index="0" style="--ui-tabs-count:3;">
+      <button class="ui-tab active" data-ie-view="list">📋 لیست</button>
+      <button class="ui-tab" data-ie-view="calendar">📅 تقویم</button>
+      <button class="ui-tab" data-ie-view="recurring">🔄 تکرارشونده</button>
     </div>
 
     <div id="ieListPanel">
-      <div class="sum-board" style="grid-template-columns:1fr 1fr;margin-top:12px;">
-        <div class="sum-card sage"><div class="sc-lbl">🟢 کل درآمد</div><div class="sc-val" id="ieIncomeTotal">۰</div><div class="ent-meta" id="ieIncomeCount" style="margin-top:4px;font-size:10px;">۰ تراکنش</div></div>
-        <div class="sum-card rust"><div class="sc-lbl">🔴 کل هزینه</div><div class="sc-val" id="ieExpenseTotal">۰</div><div class="ent-meta" id="ieExpenseCount" style="margin-top:4px;font-size:10px;">۰ تراکنش</div></div>
-        <div class="sum-card clay" id="ieNetCard" style="grid-column:1 / -1;"><div class="sc-lbl">💰 خالص</div><div class="sc-val" id="ieNetTotal">۰</div><div class="ent-meta" id="ieNetHint" style="margin-top:4px;font-size:10px;">—</div></div>
+      <div class="sum-board" style="grid-template-columns:1fr 1fr; margin-top:12px;">
+        <div class="sum-card sage"><div class="sc-lbl">کل درآمد</div><div class="sc-val" id="ieIncomeTotal">۰</div></div>
+        <div class="sum-card rust"><div class="sc-lbl">کل هزینه</div><div class="sc-val" id="ieExpenseTotal">۰</div></div>
+        <div class="sum-card clay" style="grid-column:1 / -1;"><div class="sc-lbl">خالص</div><div class="sc-val" id="ieNetTotal">۰</div></div>
       </div>
-      <input class="check-search" id="ieSearch" type="search" placeholder="جست‌وجو در دسته، توضیحات یا صندوق…">
-      <div class="check-filter-row"><button class="check-filter active" data-ie-type="all">همه</button><button class="check-filter" data-ie-type="income">درآمد</button><button class="check-filter" data-ie-type="expense">هزینه</button></div>
-      <div class="check-filter-row" style="margin-top:4px;"><button class="check-filter active" data-ie-period="all">همه دوره‌ها</button><button class="check-filter" data-ie-period="today">امروز</button><button class="check-filter" data-ie-period="week">این هفته</button><button class="check-filter" data-ie-period="month">این ماه</button><button class="check-filter" data-ie-period="year">امسال</button></div>
-      <div class="check-filter-row" id="ieFundFilterRow" style="margin-top:4px;display:none;"></div>
+
+      <input class="check-search" id="ieSearch" type="search" placeholder="جست‌وجو در دسته یا توضیحات…">
+
+      <div class="ui-filters">
+        <div class="ui-filter-group" data-ui-group="ie-type">
+          <span class="ui-filter-label"><span class="ui-label-dot"></span>نوع</span>
+          <div class="ui-chips">
+            <button class="ui-chip active" data-ie-type="all"><span>همه</span><span class="ui-chip-count" data-count-for="ie-type:all">۰</span></button>
+            <button class="ui-chip" data-ie-type="income"><span>فقط درآمد</span><span class="ui-chip-count" data-count-for="ie-type:income">۰</span></button>
+            <button class="ui-chip" data-ie-type="expense"><span>فقط هزینه</span><span class="ui-chip-count" data-count-for="ie-type:expense">۰</span></button>
+          </div>
+        </div>
+        <div class="ui-filter-progress"><i id="ieFilterProgressBar"></i></div>
+      </div>
 
       <div id="ieList"></div>
 
@@ -2999,12 +3842,18 @@ body.theme-light .fc-goal-wrap.done{background:linear-gradient(135deg,rgba(15,14
       </div>
       <div class="ent-meta" style="margin-bottom:12px;line-height:1.8;text-align:center;">💡 تراکنش‌هایی که هر ماه در روز مشخص تکرار می‌شوند. هر ماه یک‌بار «ثبت الان» را بزنید.</div>
       <input class="check-search" id="recSearch" type="search" placeholder="جست‌وجو در نام، دسته یا صندوق…">
-      <div class="check-filter-row">
-        <button class="check-filter active" data-rec-filter="all">همه</button>
-        <button class="check-filter" data-rec-filter="income">فقط درآمد</button>
-        <button class="check-filter" data-rec-filter="expense">فقط هزینه</button>
-        <button class="check-filter" data-rec-filter="active">فعال</button>
-        <button class="check-filter" data-rec-filter="inactive">غیرفعال</button>
+      <div class="ui-filters">
+        <div class="ui-filter-group" data-ui-group="rec">
+          <span class="ui-filter-label"><span class="ui-label-dot"></span>فیلتر</span>
+          <div class="ui-chips">
+            <button class="ui-chip active" data-rec-filter="all">همه <span class="ui-chip-count" data-count-for="rec:all">۰</span></button>
+            <button class="ui-chip" data-rec-filter="income">🟢 درآمد <span class="ui-chip-count" data-count-for="rec:income">۰</span></button>
+            <button class="ui-chip" data-rec-filter="expense">🔴 هزینه <span class="ui-chip-count" data-count-for="rec:expense">۰</span></button>
+            <button class="ui-chip" data-rec-filter="active">فعال <span class="ui-chip-count" data-count-for="rec:active">۰</span></button>
+            <button class="ui-chip" data-rec-filter="inactive">غیرفعال <span class="ui-chip-count" data-count-for="rec:inactive">۰</span></button>
+          </div>
+        </div>
+        <div class="ui-filter-progress"><i id="recFilterProgressBar"></i></div>
       </div>
       <div id="recListPanel"></div>
     </div>
@@ -3239,6 +4088,7 @@ body.theme-light .fc-goal-wrap.done{background:linear-gradient(135deg,rgba(15,14
 </div>
 
 <script src="vendor/supabase.js"></script>
+<script src="animations.js"></script>
 <script>
 /* ============== Jalali calendar (same verified implementation) ============== */
 function div(a,b){return ~~(a/b);}
@@ -4695,7 +5545,7 @@ function openRecurringManager(){
  body.innerHTML=`<div style="max-height:60vh;overflow-y:auto;padding:2px;margin-bottom:10px;"><div id="recList">${listHtml()}</div><button type="button" class="btn btn-panel btn-full" id="recAddBtn" style="margin-top:10px;">＋ افزودن تراکنش تکرارشونده</button></div><button type="button" class="btn btn-panel btn-full" id="recCloseBtn">بستن</button>`;
  const ov=document.getElementById('sheetOverlay');if(ov)ov.classList.add('show');try{bindKeyboardAvoidance();}catch(e){}
  body.querySelectorAll('[data-rec-edit]').forEach(b=>b.onclick=()=>{const id=b.dataset.recEdit;closeSheet();setTimeout(()=>openRecurringEditSheet(id),180);});
- body.querySelectorAll('[data-rec-del]').forEach(b=>b.onclick=()=>{const r=getRecurringById(b.dataset.recDel);if(r&&confirm('تراکنش تکرارشونده «'+r.name+'» حذف شود؟')){removeRecurring(r.id);saveState();renderRecurringSettingsCard();openRecurringManager();showToast('حذف شد');}});
+ body.querySelectorAll('[data-rec-del]').forEach(b=>b.onclick=()=>{const r=getRecurringById(b.dataset.recDel);if(!r)return;if(!confirm('تراکنش تکرارشونده «'+r.name+'» حذف شود؟'))return;removeRecurring(r.id);saveState();renderRecurringSettingsCard();openRecurringManager();showToast('حذف شد');});
  document.getElementById('recAddBtn').onclick=()=>{closeSheet();setTimeout(()=>openRecurringEditSheet(null),180);};document.getElementById('recCloseBtn').onclick=closeSheet;
 }
 function openRecurringEditSheet(recId, defaultType){
@@ -5564,92 +6414,172 @@ function renderDashboard(){
 
 /* ============== render: funds ============== */
 
+/* ============================================================
+   دیالوگ تأیید درون‌برنامه‌ای — بدون window.confirm
+   ============================================================ */
+function openConfirmSheet(opts){
+  opts = opts || {};
+  const ov = document.getElementById('sheetOverlay');
+  const body = document.getElementById('sheetBody');
+  const titleEl = document.getElementById('sheetTitle');
+  const subEl = document.getElementById('sheetSub');
+  if (!ov || !body || !titleEl || !subEl) return;
+
+  const savedBodyHtml = body.innerHTML;
+  const savedTitle = titleEl.textContent;
+  const savedSub = subEl.textContent;
+  const savedSubmitHandler = sheetSubmitHandler;
+  const danger = !!opts.danger;
+  const icon = danger ? '🗑' : '❓';
+  const iconBg = danger
+    ? 'linear-gradient(135deg,rgba(255,102,128,.22),rgba(255,102,128,.08))'
+    : 'linear-gradient(135deg,rgba(23,139,255,.20),rgba(23,139,255,.06))';
+  const iconBorder = danger
+    ? '1px solid rgba(255,102,128,.35)'
+    : '1px solid rgba(105,199,255,.30)';
+
+  titleEl.textContent = opts.title || 'تأیید عملیات';
+  subEl.textContent = opts.message || '';
+  body.innerHTML = `
+    <div style="text-align:center;padding:6px 0 20px;">
+      <div style="width:64px;height:64px;margin:0 auto 14px;border-radius:20px;background:${iconBg};border:${iconBorder};display:flex;align-items:center;justify-content:center;font-size:28px;">${icon}</div>
+      <div style="font-size:13.5px;font-weight:800;color:var(--paper);line-height:1.8;margin-bottom:6px;">${esc(opts.title || '')}</div>
+      ${opts.message ? `<div style="font-size:12px;color:var(--muted);line-height:1.8;white-space:pre-line;">${esc(opts.message)}</div>` : ''}
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;">
+      <button type="button" class="btn btn-panel" id="confirmSheetCancel">${esc(opts.cancelText || 'انصراف')}</button>
+      <button type="button" class="btn ${danger ? 'btn-rust' : 'btn-brass'}" id="confirmSheetConfirm">${esc(opts.confirmText || (danger ? 'حذف' : 'تأیید'))}</button>
+    </div>`;
+
+  ov.classList.add('show');
+  try { bindKeyboardAvoidance(); } catch(e) {}
+
+  let finished = false;
+  function finish(callback){
+    if (finished) return;
+    finished = true;
+    body.innerHTML = savedBodyHtml;
+    titleEl.textContent = savedTitle;
+    subEl.textContent = savedSub;
+    sheetSubmitHandler = savedSubmitHandler;
+    if (typeof callback === 'function') {
+      try { callback(); } catch(e) { console.warn(e); }
+    }
+  }
+  document.getElementById('confirmSheetCancel').onclick = () => finish(opts.onCancel);
+  document.getElementById('confirmSheetConfirm').onclick = () => finish(opts.onConfirm);
+}
+
 function openFundRenameSheet(){
   ensureDefaultFunds();
-  const allFunds = (STATE.funds || []).slice();
-  if(!allFunds.length){ showToast('صندوقی برای ویرایش وجود ندارد'); return; }
-  const draft = {};
-  allFunds.forEach(f=>{ draft[f.id] = f.name || ''; });
-  const incomeList = allFunds.filter(f => isIncomeFund(f));
-  const parentList = allFunds.filter(f => isExpenseFund(f) && !f.parentId);
-  const childMap = {};
-  parentList.forEach(p=>{ childMap[p.id] = allFunds.filter(f => f.parentId === p.id); });
-
-  function inputHtml(fid, label, extraClass){
-    const v = esc(draft[fid] || '');
-    return `<div class="frn-row ${extraClass||''}" style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--line);border-radius:12px;background:var(--panel-2);margin-bottom:6px;">
-      <span style="font-size:11px;color:var(--muted);min-width:14px;text-align:center;">${label||''}</span>
-      <input type="text" data-frn-id="${esc(fid)}" value="${v}" placeholder="نام صندوق" style="flex:1;min-width:0;background:var(--input-bg);border:1px solid var(--card-border);border-radius:9px;padding:9px 11px;color:var(--paper);font:13px Vazirmatn,sans-serif;outline:none;">
-    </div>`;
+  let draft;
+  if (window._fundMgrDraft){
+    draft = window._fundMgrDraft;
+    window._fundMgrDraft = null;
+  } else {
+    draft = {
+      funds: (STATE.funds || []).map(f => ({
+        id: f.id, name: f.name || '', type: fundType(f), parentId: f.parentId || null,
+        percent: Number(f.percent) || 0, entries: f.entries ? f.entries.slice() : [],
+        targetAmount: Number(f.targetAmount) || 0, _isNew: false
+      })),
+      deletedIds: new Set()
+    };
   }
-  function groupHtml(gid, title, rowsHtml, count){
-    return `<details class="frn-group" ${gid==='income'?'open':''} style="margin-bottom:8px;border:1px solid var(--card-border);border-radius:14px;background:var(--panel);overflow:hidden;">
-      <summary style="padding:11px 13px;cursor:pointer;font-size:12.5px;font-weight:800;color:var(--paper);background:var(--panel-2);list-style:none;display:flex;align-items:center;justify-content:space-between;gap:8px;">
-        <span>${esc(title)}</span>
-        <span style="font-size:10.5px;color:var(--muted);font-weight:600;">${toFa(count)} مورد</span>
-      </summary>
-      <div style="padding:10px 10px 4px;">${rowsHtml}</div>
-    </details>`;
+  const findD = id => draft.funds.find(x => x.id === id);
+  const incomes = () => draft.funds.filter(x => x.type === 'income');
+  const parents = () => draft.funds.filter(x => x.type === 'expense' && !x.parentId);
+  const kidsOf = pid => draft.funds.filter(x => x.parentId === pid);
+  function canDelete(f){
+    if (!f) return {ok:false, reason:'صندوق پیدا نشد'};
+    if (f.type === 'expense' && kidsOf(f.id).some(k => !draft.deletedIds.has(k.id))) return {ok:false, reason:'ابتدا زیرصندوق‌ها را حذف کنید'};
+    const real = (STATE.funds || []).find(x => x.id === f.id);
+    const hasTx = real && ((real.entries && real.entries.length) || (STATE.transactions || []).some(tx => tx.fundId === f.id || tx.toFundId === f.id));
+    if (hasTx) return {ok:false, reason:'این صندوق تراکنش دارد و قابل حذف نیست'};
+    return {ok:true};
   }
-
-  let htmlOut = '';
-  if(incomeList.length){
-    const rows = incomeList.map(f => inputHtml(f.id, '💰')).join('');
-    htmlOut += groupHtml('income', 'صندوق‌های درآمدی', rows, incomeList.length);
+  function rowHtml(f, depth){
+    const indent = depth > 0 ? 'padding-right:22px;border-right:3px solid var(--brass-2);margin-right:8px;' : '';
+    const typeBadge = f.type === 'income' ? '<span class="fund-type-pill inc">درآمدی</span>' : '<span class="fund-type-pill exp">هزینه‌ای</span>';
+    const delInfo = canDelete(f);
+    const delBtn = delInfo.ok
+      ? `<button type="button" class="btn-sm" data-mgr-del="${esc(f.id)}" style="background:var(--rust-bg);color:var(--del-color);border:1px solid rgba(255,102,128,.22);min-height:34px;padding:6px 11px;">🗑 حذف</button>`
+      : `<button type="button" class="btn-sm" data-mgr-blocked="${esc(f.id)}" title="${esc(delInfo.reason)}" style="opacity:.55;min-height:34px;padding:6px 11px;">🔒 حذف</button>`;
+    const addChildBtn = f.type === 'expense' && !f.parentId ? `<button type="button" class="btn-sm btn-panel" data-mgr-addchild="${esc(f.id)}" style="min-height:34px;padding:6px 11px;">＋ زیرمجموعه</button>` : '';
+    const moveHtml = f.type === 'expense' && f.parentId ? `<select data-mgr-move="${esc(f.id)}" aria-label="انتقال زیرصندوق" style="max-width:145px;background:var(--input-bg);border:1px solid var(--card-border);border-radius:8px;padding:7px;color:var(--paper);font:11px Vazirmatn,sans-serif;"><option value="">انتقال به پرنت…</option>${parents().filter(p=>p.id!==f.id && !draft.deletedIds.has(p.id)).map(p=>`<option value="${esc(p.id)}" ${p.id===f.parentId?'selected':''}>${esc(p.name||'بدون نام')}</option>`).join('')}</select>` : '';
+    const percentHtml = f.type === 'expense' ? `<div style="display:flex;align-items:center;gap:5px;"><input type="text" inputmode="numeric" data-mgr-pct="${esc(f.id)}" value="${f.percent || ''}" placeholder="۰" dir="ltr" style="width:56px;text-align:center;background:var(--input-bg);border:1px solid var(--card-border);border-radius:8px;padding:7px 5px;color:var(--paper);font:700 13px Vazirmatn,sans-serif;"><span style="font-size:11px;color:var(--muted);">٪</span></div>` : '<span style="font-size:11px;color:var(--muted);min-width:56px;text-align:center;">—</span>';
+    return `<div class="frn-row" data-mgr-row="${esc(f.id)}" style="${indent}display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 12px;background:var(--panel-2);border:1px solid var(--line);border-radius:11px;margin-bottom:6px;${f._isNew?'border-style:dashed;border-color:var(--brass-2);':''}">${typeBadge}<input type="text" data-mgr-name="${esc(f.id)}" value="${esc(f.name)}" placeholder="نام صندوق" style="flex:1;min-width:100px;background:var(--input-bg);border:1px solid var(--card-border);border-radius:8px;padding:8px 11px;color:var(--paper);font:13px Vazirmatn,sans-serif;outline:none;">${percentHtml}${moveHtml}<div style="display:flex;gap:5px;flex-wrap:wrap;">${addChildBtn}${delBtn}</div></div>`;
   }
-  parentList.forEach(p=>{
-    const kids = childMap[p.id] || [];
-    let rows = inputHtml(p.id, '📦');
-    if(kids.length){ rows += kids.map(ch => inputHtml(ch.id, '↳')).join(''); }
-    htmlOut += groupHtml(p.id, p.name || 'صندوق هزینه‌ای', rows, 1 + kids.length);
-  });
-  if(!htmlOut){ htmlOut = '<div class="empty-state" style="padding:14px;">صندوقی برای ویرایش وجود ندارد.</div>'; }
-
-  const body = document.getElementById('sheetBody');
-  document.getElementById('sheetTitle').textContent = 'ویرایش گروهی نام صندوق‌ها';
-  document.getElementById('sheetSub').textContent = 'نام هر صندوق را تغییر دهید و در پایان «تأیید» بزنید. با «انصراف» هیچ تغییری ذخیره نمی‌شود.';
-  body.innerHTML = `
-    <div style="max-height:60vh;overflow:auto;padding:2px;">${htmlOut}</div>
-    <div style="display:flex;gap:8px;margin-top:12px;">
-      <button type="button" class="btn btn-panel" id="frnCancelBtn" style="flex:1;">انصراف</button>
-      <button type="button" class="btn btn-brass" id="frnSaveBtn" style="flex:1;">تأیید و ذخیره</button>
-    </div>
-  `;
-  const ov = document.getElementById('sheetOverlay');
-  if(ov) ov.classList.add('show');
-  try{ bindKeyboardAvoidance(); }catch(e){}
-
-  body.querySelectorAll('[data-frn-id]').forEach(inp=>{
-    inp.addEventListener('input', ()=>{
-      const id = inp.getAttribute('data-frn-id');
-      draft[id] = inp.value;
-      inp.style.borderColor = '';
-    });
-  });
-  document.getElementById('frnCancelBtn').onclick = ()=>{ closeSheet(); };
-  document.getElementById('frnSaveBtn').onclick = ()=>{
-    const emptyIds = [];
-    body.querySelectorAll('[data-frn-id]').forEach(inp=>{
-      const id = inp.getAttribute('data-frn-id');
-      const v = (draft[id] || '').trim();
-      if(!v){ emptyIds.push(id); inp.style.borderColor = 'var(--rust)'; }
-    });
-    if(emptyIds.length){
-      showToast('نام ' + toFa(emptyIds.length) + ' صندوق خالی است — همه را پر کنید');
-      return;
-    }
-    let changed = 0;
-    allFunds.forEach(f=>{
-      const newName = (draft[f.id] || '').trim();
-      if(newName && newName !== f.name){ f.name = newName; changed++; }
-    });
-    if(changed === 0){ showToast('تغییری اعمال نشد'); closeSheet(); return; }
-    saveState();
-    try{ renderFunds(); }catch(e){}
-    try{ renderDashboard(); }catch(e){}
-    closeSheet();
-    showToast('نام ' + toFa(changed) + ' صندوق ذخیره شد');
-  };
+  function renderList(){
+    const host = document.getElementById('mgrList'); if (!host) return;
+    const incomeList = incomes().filter(x=>!draft.deletedIds.has(x.id));
+    const parentList = parents().filter(x=>!draft.deletedIds.has(x.id));
+    let html = `<div style="font-size:11.5px;font-weight:800;color:var(--sage);margin:4px 2px 8px;">💰 صندوق‌های درآمدی (${toFa(incomeList.length)})</div>`;
+    html += incomeList.length ? incomeList.map(f=>rowHtml(f,0)).join('') : '<div style="font-size:11px;color:var(--muted);padding:10px 12px;background:var(--panel-2);border:1px dashed var(--line);border-radius:10px;margin-bottom:8px;">صندوق درآمدی ندارید.</div>';
+    html += `<div style="font-size:11.5px;font-weight:800;color:var(--rust);margin:14px 2px 8px;">📦 صندوق‌های هزینه‌ای (${toFa(parentList.length)} پرنت)</div>`;
+    if (!parentList.length) html += '<div style="font-size:11px;color:var(--muted);padding:10px 12px;background:var(--panel-2);border:1px dashed var(--line);border-radius:10px;margin-bottom:8px;">صندوق هزینه‌ای ندارید.</div>';
+    else parentList.forEach(p=>{ html += rowHtml(p,0); kidsOf(p.id).filter(k=>!draft.deletedIds.has(k.id)).forEach(k=>html += rowHtml(k,1)); });
+    // زیرصندوق‌های بدون والد نیز نمایش داده می‌شوند تا قابل اصلاح باشند
+    draft.funds.filter(f=>f.type==='expense' && f.parentId && !findD(f.parentId) && !draft.deletedIds.has(f.id)).forEach(f=>{ html += rowHtml(f,1); });
+    host.innerHTML = html;
+  }
+  function bindListEvents(){
+    const list = document.getElementById('mgrList'); if (!list) return;
+    list.querySelectorAll('[data-mgr-name]').forEach(inp=>inp.addEventListener('input',()=>{const f=findD(inp.getAttribute('data-mgr-name'));if(f)f.name=inp.value;}));
+    list.querySelectorAll('[data-mgr-pct]').forEach(inp=>inp.addEventListener('input',()=>{const f=findD(inp.getAttribute('data-mgr-pct'));if(!f)return;let v=parseFloat(String(inp.value).replace(/[^0-9.]/g,''));if(!isFinite(v)||v<0)v=0;if(v>100)v=100;f.percent=Math.round(v*10)/10;}));
+    list.querySelectorAll('[data-mgr-move]').forEach(sel=>sel.addEventListener('change',()=>{const f=findD(sel.getAttribute('data-mgr-move'));if(f && sel.value){f.parentId=sel.value;renderList();bindListEvents();showToast('جابه‌جایی در پیش‌نویس انجام شد؛ برای اعمال ذخیره کنید');}}));
+    list.querySelectorAll('[data-mgr-del]').forEach(btn=>btn.addEventListener('click',()=>{
+      const id=btn.getAttribute('data-mgr-del');
+      const f=findD(id);
+      if(!f)return;
+      const check=canDelete(f);
+      if(!check.ok){showToast(check.reason);return;}
+      openConfirmSheet({
+        title:'حذف صندوق',
+        message:'صندوق «'+(f.name||'بدون نام')+'» حذف شود؟\n\nاین تغییر بعد از ذخیره نهایی اعمال می‌شود.',
+        confirmText:'حذف',
+        cancelText:'انصراف',
+        danger:true,
+        onConfirm:()=>{
+          draft.deletedIds.add(id);
+          if(f._isNew) draft.funds=draft.funds.filter(x=>x.id!==id);
+          window._fundMgrDraft=draft;
+          closeSheet();
+          openFundRenameSheet();
+          showToast('علامت‌گذاری شد — برای اعمال، «ذخیره همه تغییرات» را بزنید');
+        },
+        onCancel:()=>{
+          window._fundMgrDraft=draft;
+          closeSheet();
+          openFundRenameSheet();
+        }
+      });
+    }));
+    list.querySelectorAll('[data-mgr-blocked]').forEach(btn=>btn.addEventListener('click',()=>{const f=findD(btn.getAttribute('data-mgr-blocked'));const c=canDelete(f);showToast(c.reason||'حذف امکان‌پذیر نیست');}));
+    list.querySelectorAll('[data-mgr-addchild]').forEach(btn=>btn.addEventListener('click',()=>{const pid=btn.getAttribute('data-mgr-addchild');if(!findD(pid))return;const id=uid();draft.funds.push({id,name:'',type:'expense',parentId:pid,percent:0,entries:[],targetAmount:0,_isNew:true});renderList();bindListEvents();setTimeout(()=>{const inp=list.querySelector(`[data-mgr-name="${id}"]`);if(inp)inp.focus();},30);}));
+  }
+  function addNewIncome(){const id=uid();draft.funds.push({id,name:'',type:'income',parentId:null,percent:0,entries:[],targetAmount:0,_isNew:true});renderList();bindListEvents();setTimeout(()=>{const i=document.querySelector(`[data-mgr-name="${id}"]`);if(i)i.focus();},30);}
+  function addNewExpense(){const id=uid();draft.funds.push({id,name:'',type:'expense',parentId:null,percent:0,entries:[],targetAmount:0,_isNew:true});renderList();bindListEvents();setTimeout(()=>{const i=document.querySelector(`[data-mgr-name="${id}"]`);if(i)i.focus();},30);}
+  function save(){
+    const visible=draft.funds.filter(f=>!draft.deletedIds.has(f.id));
+    for(const f of visible){if(!String(f.name||'').trim()){showToast('نام همه صندوق‌ها را پر کنید');const i=document.querySelector(`[data-mgr-name="${f.id}"]`);if(i){i.focus();i.style.borderColor='var(--rust)';}return;}}
+    for(const f of visible){if(f.parentId){const p=visible.find(x=>x.id===f.parentId);if(!p||p.type!=='expense'||p.parentId){showToast('ساختار زیرصندوق نامعتبر است');return;}}}
+    const parentSum=visible.filter(f=>f.type==='expense'&&!f.parentId).reduce((s,f)=>s+(Number(f.percent)||0),0);
+    if(visible.some(f=>f.type==='expense'&&!f.parentId)&&Math.abs(parentSum-100)>0.05){showToast('مجموع درصد صندوق‌های هزینه‌ای اصلی باید ۱۰۰٪ باشد (الان: '+toFa(Math.round(parentSum*10)/10)+'٪)');return;}
+    for(const p of visible.filter(f=>f.type==='expense'&&!f.parentId)){const kids=visible.filter(f=>f.parentId===p.id);if(!kids.length)continue;const sum=kids.reduce((s,k)=>s+(Number(k.percent)||0),0);if(Math.abs(sum-100)>0.05){showToast('مجموع درصد زیرصندوق‌های «'+(p.name||'')+'» باید ۱۰۰٪ باشد (الان: '+toFa(Math.round(sum*10)/10)+'٪)');return;}}
+    const newFunds=visible.map(f=>{const orig=(STATE.funds||[]).find(x=>x.id===f.id);return {id:f.id,name:String(f.name).trim(),type:f.type,parentId:f.parentId||null,percent:Number(f.percent)||0,entries:orig?(orig.entries||[]):[],targetAmount:orig?(Number(orig.targetAmount)||0):(Number(f.targetAmount)||0)};});
+    STATE.funds=newFunds;
+    const keptIds=new Set(newFunds.map(f=>f.id));
+    if(STATE.budgets&&typeof STATE.budgets==='object')Object.keys(STATE.budgets).forEach(monthKey=>{const m=STATE.budgets[monthKey];if(!m||typeof m!=='object')return;Object.keys(m).forEach(k=>{if(k.startsWith('fund_')&&!keptIds.has(k.slice(5)))delete m[k];});});
+    saveState();try{renderFunds();}catch(e){}try{renderDashboard();}catch(e){}try{renderCashflow();}catch(e){}closeSheet();
+    const added=visible.filter(f=>f._isNew).length, deleted=draft.deletedIds.size;let msg='تغییرات ذخیره شد';if(added&&deleted)msg=toFa(added)+' افزوده و '+toFa(deleted)+' حذف شد';else if(added)msg=toFa(added)+' صندوق افزوده شد';else if(deleted)msg=toFa(deleted)+' صندوق حذف شد';showToast(msg);window._fundMgrDraft=null;
+  }
+  const body=document.getElementById('sheetBody');
+  document.getElementById('sheetTitle').textContent='⚙️ مدیریت صندوق‌ها';
+  document.getElementById('sheetSub').textContent='افزودن، ویرایش نام، حذف و جابه‌جایی — همه در یک‌جا. برای ذخیره، دکمه پایین را بزنید.';
+  body.innerHTML=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;"><button type="button" class="btn btn-sage" id="mgrAddIncome" style="min-height:42px;">＋ صندوق درآمدی</button><button type="button" class="btn btn-rust" id="mgrAddExpense" style="min-height:42px;">＋ صندوق هزینه‌ای</button></div><div id="mgrList" style="max-height:52vh;overflow-y:auto;padding:2px 2px 4px;"></div><div style="display:flex;gap:8px;margin-top:14px;"><button type="button" class="btn btn-panel" id="mgrCancel" style="flex:1;">انصراف</button><button type="button" class="btn btn-brass" id="mgrSave" style="flex:1;">💾 ذخیره همه تغییرات</button></div>`;
+  renderList();bindListEvents();const ov=document.getElementById('sheetOverlay');if(ov)ov.classList.add('show');try{bindKeyboardAvoidance();}catch(e){}
+  document.getElementById('mgrAddIncome').onclick=addNewIncome;document.getElementById('mgrAddExpense').onclick=addNewExpense;document.getElementById('mgrCancel').onclick=()=>closeSheet();document.getElementById('mgrSave').onclick=save;
 }
 
 /* ============================================================
@@ -5795,6 +6725,7 @@ function renderFunds(){
   try{ migrateLegacyGoalsToFundTargets(); }catch(e){}
 
   ensureDefaultFunds();
+  try{ updateFundTabs(); }catch(e){}
   try{ updateGlobalFundWarnings(); }catch(e){}
   const filter = window.fundFilter || 'all';
   document.querySelectorAll('[data-fund-filter]').forEach(b=>{
@@ -5844,7 +6775,7 @@ function renderFunds(){
 
   // صندوق‌های درآمدی
   if(filter==='all' || filter==='income'){
-    htmlOut += `<div class="sec-h" style="margin-top:6px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;"><h2 style="font-size:13px;">صندوق‌های درآمدی</h2><button class="btn-sm btn-panel" data-edit-fund-names style="min-height:36px;font-weight:800;">✏️ ویرایش نام</button></div>`;
+    htmlOut += `<div class="sec-h" style="margin-top:6px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;"><h2 style="font-size:13px;">صندوق‌های درآمدی</h2><button class="btn-sm btn-panel" data-manage-funds style="min-height:36px;font-weight:800;">⚙️ مدیریت صندوق‌ها</button></div>`;
     if(!incomes.length){
       htmlOut += '<div class="empty-state" style="padding:14px;">صندوق درآمدی ندارید.</div>';
     } else {
@@ -5887,7 +6818,6 @@ function renderFunds(){
           <div class="fund-box-actions" style="flex-wrap:wrap;">
             <button class="btn-sm btn-panel" data-income-fund-in="${f.id}" style="color:var(--sage);">＋ درآمد</button>
             <button class="btn-sm btn-panel" data-income-fund-out="${f.id}" style="color:var(--rust);">− هزینه</button>
-            ${hasLink?`<button class="btn-sm btn-panel" disabled style="opacity:.55;">غیرقابل حذف</button>`:`<button class="btn-sm btn-rust" data-remove-fund="${f.id}">حذف</button>`}
           </div>
         </div>`;
       }).join('')+'</div>';
@@ -5896,7 +6826,7 @@ function renderFunds(){
 
   // صندوق‌های هزینه‌ای: باکس پرنت + باکس‌های چایلد زیرش
   if(filter==='all' || filter==='expense'){
-    htmlOut += `<div class="sec-h" style="margin-top:14px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;"><h2 style="font-size:13px;">صندوق‌های هزینه‌ای</h2><div style="display:flex;gap:6px;flex-wrap:wrap;"><button class="btn-sm btn-panel" data-edit-fund-names style="min-height:40px;font-weight:800;">✏️ ویرایش نام صندوق‌ها</button><button class="btn-sm btn-panel btn-percent-manager" data-edit-expense-percentages><span class="pct-manager-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 14.4 5l2.8-.1.8 2.7 2.2 1.8-1 2.6.6 2.7-2.5 1.3-1.3 2.5-2.7-.6-2.6 1-1.8-2.2-2.7-.8.1-2.8L4.8 12l1.5-2.4-.1-2.8 2.7-.8 1.8-2.2z"/><circle cx="9" cy="9" r="1.1"/><circle cx="15" cy="15" r="1.1"/><path d="m8.5 15.5 7-7"/></svg></span><span>مدیریت درصد صندوق‌ها</span><span class="pct-manager-arrow" aria-hidden="true">‹</span></button></div></div>`;
+    htmlOut += `<div class="sec-h" style="margin-top:14px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;"><h2 style="font-size:13px;">صندوق‌های هزینه‌ای</h2><div style="display:flex;gap:6px;flex-wrap:wrap;"><button class="btn-sm btn-panel" data-manage-funds style="min-height:40px;font-weight:800;">⚙️ مدیریت صندوق‌ها</button><button class="btn-sm btn-panel btn-percent-manager" data-edit-expense-percentages><span class="pct-manager-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 14.4 5l2.8-.1.8 2.7 2.2 1.8-1 2.6.6 2.7-2.5 1.3-1.3 2.5-2.7-.6-2.6 1-1.8-2.2-2.7-.8.1-2.8L4.8 12l1.5-2.4-.1-2.8 2.7-.8 1.8-2.2z"/><circle cx="9" cy="9" r="1.1"/><circle cx="15" cy="15" r="1.1"/><path d="m8.5 15.5 7-7"/></svg></span><span>مدیریت درصد صندوق‌ها</span><span class="pct-manager-arrow" aria-hidden="true">‹</span></button></div></div>`;
     if(!parents.length){
       htmlOut += '<div class="empty-state" style="padding:14px;">صندوق هزینه‌ای ندارید.</div>';
     } else {
@@ -6007,7 +6937,6 @@ function renderFunds(){
 
             <div class="fund-box-actions" style="margin-top:10px;">
               <button type="button" class="btn-sm btn-panel" data-expense-fund="${esc(ch.id)}" style="color:var(--rust);font-weight:800;">− هزینه</button>
-              ${chLink?`<button class="btn-sm btn-panel" disabled style="opacity:.55;">—</button>`:`<button class="btn-sm btn-rust" data-remove-fund="${esc(ch.id)}">حذف</button>`}
             </div>
           </div>`;
         }).join('')}</div>` : '<div class="ent-meta" style="margin-top:6px;">زیرمجموعه‌ای ندارد — تخصیص مستقیم به همین صندوق می‌رود.</div>';
@@ -6045,7 +6974,6 @@ function renderFunds(){
             <button type="button" class="btn-sm btn-panel" data-set-budget="${esc(f.id)}" style="color:var(--gold);font-weight:800;">${_pHasBudget ? '✏️ بودجه' : '💰 بودجه'}</button>
             <button class="btn-sm btn-panel" data-add-child-fund="${f.id}">＋ زیرمجموعه</button>
             ${kids.length?`<button class="btn-sm btn-panel" data-edit-child-percentages="${f.id}" style="color:var(--brass-2);">٪ درصدها</button>`:''}
-            ${hasLink?`<button class="btn-sm btn-panel" disabled style="opacity:.55;">🔒</button>`:`<button class="btn-sm btn-rust" data-remove-fund="${f.id}">🗑</button>`}
           </div>
           ${kidsHtml}
         </div>`;
@@ -6207,6 +7135,8 @@ function renderChecks(){
   document.getElementById('checkReceivedTotal').textContent=fmtMoney(rec);document.getElementById('checkPaidTotal').textContent=fmtMoney(paid);
   document.getElementById('checkDueToday').textContent=toFa(open.filter(c=>checkDueState(c)?.key==='today').length);
   document.getElementById('checkOverdue').textContent=toFa(open.filter(c=>checkDueState(c)?.key==='overdue').length);
+  try{ uiUpdateGroupIndicator('check', !!(checkFilter && checkFilter !== 'all')); }catch(e){}
+  try{ updateIeFilterCounts(null); }catch(e){}
   const q=(document.getElementById('checkSearch')?.value||'').trim().toLowerCase();
   const filtered=checks.filter(c=>{if(checkFilter==='received'&&c.kind!=='received')return false;if(checkFilter==='paid'&&c.kind!=='paid')return false;if(checkFilter==='open'&&!checkIsOpen(c))return false;if(checkFilter==='overdue'&&checkDueState(c)?.key!=='overdue')return false;return !q||[c.party,c.number,c.bank,c.sayad,c.purpose,c.dueDate].join(' ').toLowerCase().includes(q);}).sort((a,b)=>(jalaliOrdinal(checkDateParse(a.dueDate))||0)-(jalaliOrdinal(checkDateParse(b.dueDate))||0));
   const wrap=document.getElementById('checkList');if(!filtered.length){wrap.innerHTML='<div class="empty-state">چکی برای نمایش وجود ندارد. از دکمه‌های بالا برای ثبت چک دریافتی یا پرداختی استفاده کن.</div>';return;}
@@ -6259,44 +7189,126 @@ function exportChecks(){
 }
 
 /* ============== Income & Expense (درآمد و هزینه) ============== */
-function txInPeriod(tx, period){
-  const t = todayJalali();
-  const d = parseTxDate(tx.date);
-  if(!d) return false;
-  if(period === 'day') return d.jy===t.jy && d.jm===t.jm && d.jd===t.jd;
-  if(period === 'month') return d.jy===t.jy && d.jm===t.jm;
-  if(period === 'year') return d.jy===t.jy;
-  return true;
-}
-window._iePeriodFilter = window._iePeriodFilter || 'all';
-window._ieFundFilter = window._ieFundFilter || 'all';
 function getFilteredTransactions(){
- try{
-  let list=(Array.isArray(STATE.transactions)?STATE.transactions:[]).filter(tx=>tx&&typeof tx==='object'&&['income','expense','transfer'].includes(tx.type));
-  const t=todayJalali();
-  if(ieTypeFilter==='income'||ieTypeFilter==='expense')list=list.filter(tx=>tx.type===ieTypeFilter);
-  const q=(document.getElementById('ieSearch')?.value||'').trim().toLowerCase();
-  if(q) list=list.filter(tx=>String(tx.category||'').toLowerCase().includes(q)||String(tx.note||'').toLowerCase().includes(q));
-  list.sort((a,b)=>(Number(b.createdAt)||0)-(Number(a.createdAt)||0));
+  let list = Array.isArray(STATE.transactions) ? STATE.transactions.slice() : [];
+  if(ieTypeFilter === 'income') list = list.filter(tx => tx.type === 'income');
+  if(ieTypeFilter === 'expense') list = list.filter(tx => tx.type === 'expense');
+  const q = (document.getElementById('ieSearch')?.value || '').trim().toLowerCase();
+  if(q){
+    list = list.filter(tx =>
+      (tx.category||'').toLowerCase().includes(q) ||
+      (tx.note||'').toLowerCase().includes(q)
+    );
+  }
+  list.sort((a,b) => (b.createdAt||0) - (a.createdAt||0));
   return list;
- }catch(e){ console.warn('getFilteredTransactions error:',e); return []; }
 }
 
 function renderCashflow(){
- const lp=document.getElementById('ieListPanel'),cp=document.getElementById('ieCalPanel'),rp=document.getElementById('ieRecPanel');
- document.querySelectorAll('[data-ie-view]').forEach(b=>b.classList.toggle('active',b.getAttribute('data-ie-view')===ieViewMode));if(lp)lp.style.display=ieViewMode==='list'?'':'none';if(cp)cp.style.display=ieViewMode==='calendar'?'':'none';if(rp)rp.style.display=ieViewMode==='recurring'?'':'none';
- if(ieViewMode==='recurring'){renderRecurringList();const rs=ensureRecurring(),pill=document.getElementById('ieCountPill');if(pill)pill.textContent=toFa(rs.length)+' تکرارشونده';const ic=document.getElementById('recIncomeCount'),ec=document.getElementById('recExpenseCount');if(ic)ic.textContent=toFa(rs.filter(x=>x.type==='income').length)+' مورد';if(ec)ec.textContent=toFa(rs.filter(x=>x.type==='expense').length)+' مورد';return}
- if(ieViewMode==='calendar'){renderCalendar();const t=todayJalali(),m=calMonth||{jy:t.jy,jm:t.jm},xs=(STATE.transactions||[]).filter(x=>['income','expense'].includes(x.type)&&(()=>{const d=parseTxDate(x.date);return d&&d.jy===m.jy&&d.jm===m.jm})());document.getElementById('ieCountPill').textContent=toFa(xs.length)+' تراکنش ماه';return}
- const all=(STATE.transactions||[]).filter(x=>['income','expense'].includes(x.type)),list=getFilteredTransactions();const ins=all.filter(x=>x.type==='income'),outs=all.filter(x=>x.type==='expense'),inc=ins.reduce((n,x)=>n+(Number(x.amount)||0),0),exp=outs.reduce((n,x)=>n+(Number(x.amount)||0),0),net=inc-exp;
- const set=(id,v,html=false)=>{const e=document.getElementById(id);if(e){if(html)e.innerHTML=v;else e.textContent=v;}};set('ieIncomeTotal',fmtMoneyUnit(inc),true);set('ieExpenseTotal',fmtMoneyUnit(exp),true);set('ieIncomeCount',toFa(ins.length)+' تراکنش');set('ieExpenseCount',toFa(outs.length)+' تراکنش');set('ieNetTotal',(net>=0?'+':'')+fmtMoneyUnit(net),true);set('ieNetHint',net>0?'به نفع شما':net<0?'به ضرر شما':'تساوی');const nc=document.getElementById('ieNetCard');if(nc)nc.className='sum-card '+(net>0?'sage':net<0?'rust':'clay');set('ieCountPill',toFa(list.length)+' تراکنش');
- document.querySelectorAll('[data-ie-type]').forEach(b=>b.classList.toggle('active',b.getAttribute('data-ie-type')===ieTypeFilter));document.querySelectorAll('[data-ie-period]').forEach(b=>b.classList.toggle('active',b.getAttribute('data-ie-period')===(window._iePeriodFilter||'all')));renderIeFundFilter();
- const wrap=document.getElementById('ieList');if(!wrap)return;if(!list.length){wrap.innerHTML='<div class="empty-state">تراکنشی با این فیلترها پیدا نشد.</div>';return}
- const groups={};list.forEach(tx=>{const d=parseTxDate(tx.date),k=d?d.jy+'-'+String(d.jm).padStart(2,'0'):'undated';(groups[k]||(groups[k]={jy:d?.jy,jm:d?.jm,items:[]})).items.push(tx)});
- const keys=Object.keys(groups).sort((a,b)=>{if(a==='undated')return 1;if(b==='undated')return -1;return b.localeCompare(a)});
- const card=tx=>{const d=parseTxDate(tx.date),date=d?toFa(d.jd)+' '+(MONTH_FA[d.jm]||''):esc(tx.date||'—'),isIn=tx.type==='income',transfer=tx.type==='transfer',f=tx.fundId?findFund(tx.fundId):null,to=tx.toFundId?findFund(tx.toFundId):null;const title=transfer?'⇄ انتقال بین صندوق‌ها':`${isIn?'🟢':'🔴'} ${esc(f?.name||'بدون صندوق')}`,color=transfer?'var(--clay)':isIn?'var(--sage)':'var(--rust)',sign=transfer?'':isIn?'+':'−';return `<div class="ent-card" style="margin-bottom:8px;border-color:${transfer?'var(--card-border)':isIn?'rgba(85,214,190,.2)':'rgba(255,102,128,.2)'}"><div style="display:flex;justify-content:space-between;gap:10px"><div style="min-width:0;flex:1"><div style="font-weight:800;font-size:12.5px;color:var(--paper)">${title}</div><div style="font-size:10.5px;color:var(--muted);margin-top:4px">${transfer?esc(f?.name||'?')+' ← '+esc(to?.name||'?'):((tx.category?'🏷️ '+esc(tx.category)+' · ':'')+'📅 '+date)}</div>${tx.note?`<div style="font-size:10px;color:var(--note-color);margin-top:4px;overflow-wrap:anywhere">📝 ${esc(tx.note)}</div>`:''}</div><div style="text-align:left;font-weight:900;font-size:14px;color:${color};white-space:nowrap">${sign}${fmtMoney(tx.amount)}<div style="font-size:9px;color:var(--muted)">${currencyUnit()}</div></div></div><div style="display:flex;gap:8px;margin-top:10px"><button class="btn-ghost-sm" data-edit-tx="${tx.id}">✏️ ویرایش</button><button class="btn-ghost-sm" data-delete-tx="${tx.id}" style="color:var(--rust)">🗑 حذف</button></div></div>`};
- wrap.innerHTML=keys.map(k=>{const g=groups[k],month=g.jm?`${MONTH_FA[g.jm]} ${toFa(g.jy)}`:'بدون تاریخ';let mi=0,me=0;g.items.forEach(x=>{if(x.type==='income')mi+=Number(x.amount)||0;else if(x.type==='expense')me+=Number(x.amount)||0});const mn=mi-me;return `<section style="margin-bottom:18px"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 4px;margin-bottom:6px;border-bottom:1px solid var(--line)"><b style="font-size:12px;color:var(--paper)">📅 ${month}</b><div style="display:flex;gap:7px;font-size:10px;font-weight:800"><span style="color:var(--sage)">+${fmtMoney(mi)}</span><span style="color:var(--rust)">−${fmtMoney(me)}</span><span style="color:${mn>=0?'var(--sage)':'var(--rust)'}">${mn>=0?'+':''}${fmtMoney(mn)}</span></div></div>${g.items.map(card).join('')}</section>`}).join('');
+  const listPanel = document.getElementById('ieListPanel');
+  const calPanel = document.getElementById('ieCalPanel');
+  const recPanel = document.getElementById('ieRecPanel');
+  (function(){
+    const tabs = document.getElementById('ieTabsBar');
+    if(!tabs) return;
+    const idx = ['list','calendar','recurring'].indexOf(ieViewMode);
+    setUiTabsActive(tabs, idx < 0 ? 0 : idx);
+  })();
+  if(listPanel) listPanel.style.display = ieViewMode === 'list' ? '' : 'none';
+  if(calPanel) calPanel.style.display = ieViewMode === 'calendar' ? '' : 'none';
+  if(recPanel) recPanel.style.display = ieViewMode === 'recurring' ? '' : 'none';
+
+  if(ieViewMode === 'recurring'){
+    renderRecurringList();
+    const rs = ensureRecurring();
+    const incCount = rs.filter(r=>r.type==='income').length;
+    const expCount = rs.filter(r=>r.type==='expense').length;
+    const pill = document.getElementById('ieCountPill');
+    if(pill) pill.textContent = toFa(rs.length) + ' تکرارشونده';
+    const ic = document.getElementById('recIncomeCount');
+    const ec = document.getElementById('recExpenseCount');
+    if(ic) ic.textContent = toFa(incCount) + ' مورد';
+    if(ec) ec.textContent = toFa(expCount) + ' مورد';
+    return;
+  }
+
+  if(ieViewMode === 'calendar'){
+    renderCalendar();
+    const t = todayJalali();
+    const monthTx = (STATE.transactions||[]).filter(tx=>{
+      if(tx.type!=='income' && tx.type!=='expense') return false;
+      const d=parseTxDate(tx.date); if(!d) return false;
+      const m = calMonth || {jy:t.jy,jm:t.jm};
+      return d.jy===m.jy && d.jm===m.jm;
+    });
+    document.getElementById('ieCountPill').textContent = toFa(monthTx.length) + ' تراکنش ماه';
+    return;
+  }
+
+  // ===== تب لیست (ساده) =====
+  const list = getFilteredTransactions();
+  const allTx = (STATE.transactions||[]).filter(t=>t.type==='income'||t.type==='expense');
+  const incomeSum = allTx.filter(t=>t.type==='income').reduce((s,t)=>s+(Number(t.amount)||0),0);
+  const expenseSum = allTx.filter(t=>t.type==='expense').reduce((s,t)=>s+(Number(t.amount)||0),0);
+  const net = incomeSum - expenseSum;
+
+  document.getElementById('ieCountPill').textContent = toFa(list.length) + ' تراکنش';
+  document.getElementById('ieIncomeTotal').innerHTML = fmtMoneyUnit(incomeSum);
+  document.getElementById('ieExpenseTotal').innerHTML = fmtMoneyUnit(expenseSum);
+  const netEl = document.getElementById('ieNetTotal');
+  if(netEl){
+    netEl.innerHTML = fmtMoneyUnit(net);
+    netEl.style.color = net >= 0 ? 'var(--sage)' : 'var(--rust)';
+  }
+
+  document.querySelectorAll('[data-ie-type]').forEach(b=>{
+    b.classList.toggle('active', b.getAttribute('data-ie-type') === ieTypeFilter);
+  });
+  try{ updateIeFilterCounts(null); }catch(e){}
+  try{ uiUpdateGroupIndicator('ie-type', ieTypeFilter && ieTypeFilter !== 'all'); }catch(e){}
+
+  const wrap = document.getElementById('ieList');
+  if(!wrap) return;
+  if(!list.length){
+    wrap.innerHTML = '<div class="empty-state">هنوز تراکنشی ثبت نشده. برای ثبت مورد جدید از بخش «صندوق‌ها» استفاده کنید.</div>';
+    return;
+  }
+  wrap.innerHTML = list.map(tx=>{
+    const isIn = tx.type === 'income';
+    const isTransfer = tx.type === 'transfer';
+    const d = parseTxDate(tx.date);
+    const dateLabel = d ? fullFa(d) : (tx.date||'—');
+    let title, amtColor, amtSign, fundLine = '';
+    if(isTransfer){
+      title = '⇄ انتقال: ' + esc((findFund(tx.fundId)||{}).name||'?') + ' ← ' + esc((findFund(tx.toFundId)||{}).name||'?');
+      amtColor = 'var(--clay)'; amtSign = '';
+      fundLine = '';
+    }else{
+      const fName = (findFund(tx.fundId)||{}).name || '';
+      title = (isIn?'🟢':'🔴') + ' ' + esc(fName || 'بدون صندوق');
+      amtColor = isIn?'var(--sage)':'var(--rust)';
+      amtSign = isIn?'+':'-';
+      const catSmall = tx.category ? esc(tx.category) : '';
+      fundLine = (catSmall ? ('دسته: '+catSmall) : '') + (tx.note ? ((catSmall?' · ':'')+esc(tx.note)) : '');
+    }
+    return `<div class="ent-card">
+      <div class="ent-top" style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
+        <div>
+          <div class="ent-title" style="font-weight:800;font-size:14px;">${title}</div>
+          <div class="ent-meta" style="font-size:11px;color:var(--muted);margin-top:4px;">${dateLabel}${fundLine?(' · '+fundLine):''}</div>
+        </div>
+        <div style="text-align:left;font-weight:900;font-size:15px;color:${amtColor};white-space:nowrap;">
+          ${amtSign}${fmtMoney(tx.amount)}
+          <div style="font-size:9px;color:var(--muted);font-weight:600;margin-top:2px;">${currencyUnit()}</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:12px;">
+        <button class="btn-ghost-sm" data-edit-tx="${tx.id}">ویرایش</button>
+        <button class="btn-ghost-sm" data-delete-tx="${tx.id}" style="color:var(--rust);">حذف</button>
+      </div>
+    </div>`;
+  }).join('');
 }
-function renderIeFundFilter(){const row=document.getElementById('ieFundFilterRow');if(!row)return;const fs=STATE.funds||[];row.style.display=fs.length?'flex':'none';row.innerHTML=`<button class="check-filter ${(window._ieFundFilter||'all')==='all'?'active':''}" data-ie-fund="all">همه صندوق‌ها</button>`+fs.map(f=>`<button class="check-filter ${window._ieFundFilter===f.id?'active':''}" data-ie-fund="${esc(f.id)}" style="font-size:10px">${esc(f.name||'صندوق')}</button>`).join('')}
 
 
 /* ============================================================
@@ -6316,6 +7328,8 @@ function renderRecurringList(){
   const ec = document.getElementById('recExpenseCount');
   if(ic) ic.textContent = toFa(incCount) + ' مورد';
   if(ec) ec.textContent = toFa(expCount) + ' مورد';
+  try{ uiUpdateGroupIndicator('rec', !!(window._recTypeFilter && window._recTypeFilter !== 'all')); }catch(e){}
+  try{ updateIeFilterCounts(null); }catch(e){}
 
   if(!all.length){
     host.innerHTML = '<div class="empty-state" style="padding:30px 14px;">هنوز تراکنش تکرارشونده‌ای تعریف نکرده‌اید.<br>با دکمه پایین صفحه، اولین مورد را اضافه کنید.</div>';
@@ -6409,9 +7423,12 @@ function renderRecurringList(){
   });
   host.querySelectorAll('[data-rec-del]').forEach(b=>b.onclick=()=>{
     const r=getRecurringById(b.dataset.recDel);
-    if(r&&confirm('تراکنش تکرارشونده «'+r.name+'» حذف شود؟')){
-      removeRecurring(r.id);saveState();renderCashflow();showToast('حذف شد');
-    }
+    if(!r)return;
+    if(!confirm('تراکنش تکرارشونده «'+r.name+'» حذف شود؟'))return;
+    removeRecurring(r.id);
+    saveState();
+    renderCashflow();
+    showToast('حذف شد');
   });
   host.querySelectorAll('[data-rec-record]').forEach(b=>b.onclick=()=>{
     const id=b.dataset.recRecord,r=getRecurringById(id);
@@ -9118,7 +10135,16 @@ document.addEventListener('click', function(e){
   const checkStatusBtn=t.closest('[data-check-status-btn]');
   if(checkStatusBtn){const c=(STATE.checks||[]).find(x=>x.id===checkStatusBtn.getAttribute('data-check-status-btn'));if(!c)return;openNativeSelector('وضعیت چک',[{v:'pending',l:'در انتظار سررسید'},{v:'received_done',l:'وصول‌شده'},{v:'paid_done',l:'پرداخت‌شده'},{v:'returned',l:'برگشتی'},{v:'cancelled',l:'ابطال‌شده'},{v:'transferred',l:'منتقل‌شده'}],c.status,val=>{c.status=val;c.history=c.history||[];c.history.push({status:val,at:Date.now()});saveState();renderChecks();try{renderDashboard()}catch(e){}showToast('وضعیت چک: '+checkStatusLabel(val))});return;}
   const deleteCheckBtn=t.closest('[data-delete-check]');
-  if(deleteCheckBtn){ const id=deleteCheckBtn.getAttribute('data-delete-check'); if(confirm('این چک حذف شود؟')){ STATE.checks=(STATE.checks||[]).filter(c=>c.id!==id); saveState(); renderChecks(); try{renderDashboard()}catch(e){} showToast('چک حذف شد'); } return; }
+  if(deleteCheckBtn){
+    const id=deleteCheckBtn.getAttribute('data-delete-check');
+    if(!confirm('این چک حذف شود؟')) return;
+    STATE.checks=(STATE.checks||[]).filter(c=>c.id!==id);
+    saveState();
+    renderChecks();
+    try{renderDashboard()}catch(e){}
+    showToast('چک حذف شد');
+    return;
+  }
   const editCheckBtn=t.closest('[data-edit-check]');
   if(editCheckBtn){editBankCheck(editCheckBtn.getAttribute('data-edit-check'));return;}
 
@@ -9146,15 +10172,12 @@ if(t.id==='addRecurringExpenseBtn'){ openRecurringEditSheet(null, 'expense'); re
     renderCashflow();
     return;
   }
-  const iePeriodBtn = t.closest('[data-ie-period]');
-  if(iePeriodBtn){window._iePeriodFilter=iePeriodBtn.getAttribute('data-ie-period')||'all';renderCashflow();return;}
   const ieTypeBtn = t.closest('[data-ie-type]');
   if(ieTypeBtn){
     ieTypeFilter = ieTypeBtn.getAttribute('data-ie-type');
     renderCashflow();
     return;
   }
-  const ieFundBtn=t.closest('[data-ie-fund]');if(ieFundBtn){window._ieFundFilter=ieFundBtn.getAttribute('data-ie-fund')||'all';renderCashflow();return;}
   const personFilterBtn = t.closest('[data-person-filter]');
   if(personFilterBtn){
     window._personFilter = personFilterBtn.getAttribute('data-person-filter') || 'all';
@@ -9167,26 +10190,25 @@ if(t.id==='addRecurringExpenseBtn'){ openRecurringEditSheet(null, 'expense'); re
   if(editTxBtn){ editTransaction(editTxBtn.getAttribute('data-edit-tx')); return; }
   const delTxBtn = t.closest('[data-delete-tx]');
   if(delTxBtn){
-    const id = delTxBtn.getAttribute('data-delete-tx');
-    const firstTx = (STATE.transactions||[]).find(x=>x.id===id);
-    const isMulti = firstTx && firstTx.multiGroup;
-    const confirmMsg = isMulti
-      ? 'این هزینه چندصندوقی شامل چند تراکنش است. همه حذف شوند؟'
-      : 'این تراکنش حذف شود؟';
-    if(confirm(confirmMsg)){
-      if(isMulti){
-        const groupId = firstTx.multiGroup;
-        const groupTx = (STATE.transactions||[]).filter(x=>x.multiGroup===groupId);
-        groupTx.forEach(tx=> removeLinkedFundEntries(tx));
-        STATE.transactions = (STATE.transactions||[]).filter(x=>x.multiGroup!==groupId);
-      }else{
-        if(firstTx) removeLinkedFundEntries(firstTx);
-        STATE.transactions = (STATE.transactions||[]).filter(x=>x.id!==id);
-      }
-      saveState();
-      renderCashflow(); renderFunds(); renderDashboard();
-      showToast('تراکنش حذف شد');
+    const id=delTxBtn.getAttribute('data-delete-tx');
+    const firstTx=(STATE.transactions||[]).find(x=>x.id===id);
+    const isMulti=firstTx&&firstTx.multiGroup;
+    const confirmMsg=isMulti?'این هزینه چندصندوقی شامل چند تراکنش است. همه حذف شوند؟':'این تراکنش حذف شود؟';
+    if(!confirm(confirmMsg)) return;
+    if(isMulti){
+      const groupId=firstTx.multiGroup;
+      const groupTx=(STATE.transactions||[]).filter(x=>x.multiGroup===groupId);
+      groupTx.forEach(tx=>removeLinkedFundEntries(tx));
+      STATE.transactions=(STATE.transactions||[]).filter(x=>x.multiGroup!==groupId);
+    } else {
+      if(firstTx)removeLinkedFundEntries(firstTx);
+      STATE.transactions=(STATE.transactions||[]).filter(x=>x.id!==id);
     }
+    saveState();
+    renderCashflow();
+    renderFunds();
+    renderDashboard();
+    showToast('تراکنش حذف شد');
     return;
   }
 
@@ -9276,7 +10298,7 @@ if(t.id==='addRecurringExpenseBtn'){ openRecurringEditSheet(null, 'expense'); re
   if(toggleEnt){ toggleEnt.closest('.ent-card').classList.toggle('open'); return; }
 
   /* ---- batch percentage editor: expense funds and each parent's children ---- */
-  if(t.closest('[data-edit-fund-names]')){
+  if(t.closest('[data-manage-funds]')){
     openFundRenameSheet();
     return;
   }
@@ -9319,36 +10341,8 @@ if(t.id==='addRecurringExpenseBtn'){ openRecurringEditSheet(null, 'expense'); re
   const fundFilterBtn = t.closest('[data-fund-filter]');
   if(fundFilterBtn){
     window.fundFilter = fundFilterBtn.getAttribute('data-fund-filter') || 'all';
+    try{ updateFundTabs(); }catch(e){}
     renderFunds();
-    return;
-  }
-  if(t.id==='addIncomeFundBtn' || t.id==='addFundBtn'){
-    openFormSheet('صندوق درآمدی جدید', 'درآمدها می‌توانند به این صندوق وصل شوند', [
-      {key:'name', label:'نام صندوق', placeholder:'مثلاً صندوق اصلی / حقوق'}
-    ], 'افزودن', (vals)=>{
-      if(!vals.name){ setFieldError('name','نام را وارد کنید'); return false; }
-      ensureDefaultFunds();
-      STATE.funds.push({id:uid(), name:vals.name, type:'income', entries:[]});
-      saveState(); renderFunds(); renderDashboard(); showToast('صندوق درآمدی اضافه شد');
-    });
-    return;
-  }
-  if(t.id==='addExpenseFundBtn'){
-    openFormSheet('صندوق هزینه‌ای جدید', 'درصد سهم از تخصیص درآمد را مشخص کنید', [
-      {key:'name', label:'نام صندوق', placeholder:'مثلاً سرمایه‌گذاری / جاری'},
-      {key:'percent', type:'number', label:'درصد تخصیص از درآمد (۰ تا ۱۰۰)', placeholder:'0'}
-    ], 'افزودن', (vals)=>{
-      if(!vals.name){ setFieldError('name','نام را وارد کنید'); return false; }
-      let pct = Number(vals.percent)||0; if(pct<0)pct=0; if(pct>100)pct=100;
-      ensureDefaultFunds();
-      const others = topExpenseFunds().reduce((s,x)=>s+(Number(x.percent)||0),0);
-      if(Math.abs(others+pct-100)>0.05){
-        setFieldError('percent','جمع درصد پرنت‌ها با این مقدار '+toFa(Math.round((others+pct)*10)/10)+'٪ می‌شود؛ باید ۱۰۰٪ باشد');
-        return false;
-      }
-      STATE.funds.push({id:uid(), name:vals.name, type:'expense', percent:pct, parentId:null, entries:[]});
-      saveState(); renderFunds(); renderDashboard(); showToast('صندوق هزینه‌ای اضافه شد');
-    });
     return;
   }
   const setGoalBtn = t.closest('[data-set-goal]');
@@ -9374,20 +10368,6 @@ if(t.id==='addRecurringExpenseBtn'){ openRecurringEditSheet(null, 'expense'); re
       STATE.funds.push({id:uid(), name:vals.name, type:'expense', percent:pct, parentId:pid, entries:[]});
       saveState(); renderFunds(); showToast('زیرمجموعه اضافه شد');
     });
-    return;
-  }
-  const rmFund = t.closest('[data-remove-fund]');
-  if(rmFund){
-    const fid = rmFund.getAttribute('data-remove-fund');
-    const kids = childFunds(fid);
-    if(kids.length){ showToast('ابتدا زیرمجموعه‌ها را حذف کنید'); return; }
-    const f = STATE.funds.find(x=>x.id===fid);
-    const hasTx = f && ((f.entries&&f.entries.length) || (STATE.transactions||[]).some(tx=>tx.fundId===fid || tx.toFundId===fid));
-    if(hasTx){ showToast('صندوق دارای تراکنش است و قابل حذف نیست'); return; }
-    if(confirm('این صندوق حذف شود؟')){
-      STATE.funds = STATE.funds.filter(x=>x.id!==fid);
-      saveState(); renderFunds(); renderDashboard();
-    }
     return;
   }
   // (data-edit-fund-name حذف شد — ویرایش نام از شیت گروهی انجام می‌شود)
@@ -9459,12 +10439,15 @@ if(t.id==='addRecurringExpenseBtn'){ openRecurringEditSheet(null, 'expense'); re
     });
     return;
   }
-  const rmLoan = t.closest('[data-remove-loan]');
+  const rmLoan=t.closest('[data-remove-loan]');
   if(rmLoan){
-    if(confirm('این وام حذف شود؟')){
-      STATE.loans = STATE.loans.filter(l=>l.id!==rmLoan.getAttribute('data-remove-loan'));
-      saveState(); renderLoans(); renderDashboard();
-    }
+    if(!confirm('این وام حذف شود؟'))return;
+    const lid=rmLoan.getAttribute('data-remove-loan');
+    STATE.loans=STATE.loans.filter(l=>l.id!==lid);
+    saveState();
+    renderLoans();
+    renderDashboard();
+    showToast('وام حذف شد');
     return;
   }
   const addLoanEntryBtn = t.closest('[data-add-loan-entry]');
@@ -9482,11 +10465,12 @@ if(t.id==='addRecurringExpenseBtn'){ openRecurringEditSheet(null, 'expense'); re
     });
     return;
   }
-  const delLoanEntry = t.closest('[data-del-loan-entry]');
+  const delLoanEntry=t.closest('[data-del-loan-entry]');
   if(delLoanEntry){
-    const [lid,eid] = delLoanEntry.getAttribute('data-del-loan-entry').split('|');
-    const l = STATE.loans.find(x=>x.id===lid);
-    if(l){ l.entries = l.entries.filter(e=>e.id!==eid); saveState(); renderLoans(); renderDashboard(); }
+    if(!confirm('این پرداخت حذف شود؟'))return;
+    const [lid,eid]=delLoanEntry.getAttribute('data-del-loan-entry').split('|');
+    const l=STATE.loans.find(x=>x.id===lid);
+    if(l){l.entries=l.entries.filter(e=>e.id!==eid);saveState();renderLoans();renderDashboard();showToast('پرداخت حذف شد');}
     return;
   }
 
@@ -9504,19 +10488,17 @@ if(t.id==='addRecurringExpenseBtn'){ openRecurringEditSheet(null, 'expense'); re
     });
     return;
   }
-  const rmPerson = t.closest('[data-remove-person]');
+  const rmPerson=t.closest('[data-remove-person]');
   if(rmPerson){
-    if(confirm('این شخص کاملاً حذف شود؟')){
-      const gone = STATE.persons.find(p=>p.id===rmPerson.getAttribute('data-remove-person'));
-      ((gone && gone.entries)||[]).forEach(en=>{
-        if(en.fundId && en.fundEntryId){
-          const ff=findFund(en.fundId);
-          if(ff) ff.entries=(ff.entries||[]).filter(x=>x.id!==en.fundEntryId);
-        }
-      });
-      STATE.persons = STATE.persons.filter(p=>p.id!==rmPerson.getAttribute('data-remove-person'));
-      saveState(); renderPersons(); renderDashboard();
-    }
+    if(!confirm('این شخص کاملاً حذف شود؟'))return;
+    const pid=rmPerson.getAttribute('data-remove-person');
+    const gone=STATE.persons.find(p=>p.id===pid);
+    ((gone&&gone.entries)||[]).forEach(en=>{if(en.fundId&&en.fundEntryId){const ff=findFund(en.fundId);if(ff)ff.entries=(ff.entries||[]).filter(x=>x.id!==en.fundEntryId);}});
+    STATE.persons=STATE.persons.filter(p=>p.id!==pid);
+    saveState();
+    renderPersons();
+    renderDashboard();
+    showToast('شخص حذف شد');
     return;
   }
   const addPersonEntryBtn = t.closest('[data-add-person-entry], [data-person-action]');
@@ -9557,19 +10539,12 @@ if(t.id==='addRecurringExpenseBtn'){ openRecurringEditSheet(null, 'expense'); re
     });
     return;
   }
-  const delPersonEntry = t.closest('[data-del-person-entry]');
+  const delPersonEntry=t.closest('[data-del-person-entry]');
   if(delPersonEntry){
-    const [pid,eid] = delPersonEntry.getAttribute('data-del-person-entry').split('|');
-    const p = STATE.persons.find(x=>x.id===pid);
-    if(p){
-      const ent = (p.entries||[]).find(e=>e.id===eid);
-      if(ent && ent.fundId && ent.fundEntryId){
-        const f = findFund(ent.fundId);
-        if(f) f.entries = (f.entries||[]).filter(e=>e.id!==ent.fundEntryId);
-      }
-      p.entries = p.entries.filter(e=>e.id!==eid);
-      saveState(); renderPersons(); renderFunds(); renderDashboard();
-    }
+    if(!confirm('این تراکنش شخص حذف شود؟'))return;
+    const [pid,eid]=delPersonEntry.getAttribute('data-del-person-entry').split('|');
+    const p=STATE.persons.find(x=>x.id===pid);
+    if(p){const ent=(p.entries||[]).find(e=>e.id===eid);if(ent&&ent.fundId&&ent.fundEntryId){const f=findFund(ent.fundId);if(f)f.entries=(f.entries||[]).filter(e=>e.id!==ent.fundEntryId);}p.entries=p.entries.filter(e=>e.id!==eid);saveState();renderPersons();renderFunds();renderDashboard();showToast('تراکنش حذف شد');}
     return;
   }
 });
@@ -9737,6 +10712,200 @@ function isNative(){ try{ if(!CAP) return false; if(CAP.isNativePlatform && CAP.
 let CU=null, sb=null, cTimer=0, cBusy=false, cMsg='', cReady=false;
 function hasData(d){ try{ return !!d && ['funds','wealthCategories','loans','persons','checks','transactions','recurring'].some(k=>(d[k]||[]).length>0); }catch(e){ return false; } }
 function esc(x){ return String(x==null?'':x).replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[c])); }
+
+/* ============================================================
+   UNIFIED FILTERS — helpers
+   ============================================================ */
+
+// فعال/غیرفعال کردن نشانگر گروه‌ها و نوار پیشرفت
+function uiUpdateGroupIndicator(groupName, isActive){
+  const g = document.querySelector('.ui-filter-group[data-ui-group="'+groupName+'"]');
+  if(g) g.classList.toggle('has-active', !!isActive);
+  const bar = document.getElementById(groupName.replace('-','') + 'FilterProgressBar')
+        || document.getElementById((groupName.split('-')[0]) + 'FilterProgressBar');
+  if(bar){
+    const groups = document.querySelectorAll('.ui-filter-group[data-ui-group^="'+(groupName.split('-')[0])+'"]');
+    let active = 0, total = 0;
+    groups.forEach(gr=>{ total++; if(gr.classList.contains('has-active')) active++; });
+    bar.style.width = total ? Math.round((active/total)*100) + '%' : '0%';
+  }
+}
+
+// انیمیشن شمارنده
+function uiSetCount(selector, value){
+  const el = document.querySelector(selector);
+  if(!el) return;
+  const txt = toFa(value);
+  if(el.textContent !== txt){
+    el.textContent = txt;
+    el.classList.remove('count-bump');
+    void el.offsetWidth;
+    el.classList.add('count-bump');
+  }
+}
+
+// ریپل مشترک — یک‌بار bind می‌شود
+(function uiBindChipRipple(){
+  if(window.__uiChipRippleBound) return;
+  window.__uiChipRippleBound = true;
+  document.addEventListener('pointerdown', function(e){
+    const chip = e.target.closest && e.target.closest('.ui-chip');
+    if(!chip) return;
+    try{
+      const r = chip.getBoundingClientRect();
+      chip.style.setProperty('--rip-x', ((e.clientX - r.left)/r.width*100) + '%');
+      chip.style.setProperty('--rip-y', ((e.clientY - r.top)/r.height*100) + '%');
+      chip.classList.add('rippling');
+      setTimeout(()=> chip.classList.remove('rippling'), 350);
+    }catch(err){}
+  }, { passive:true });
+})();
+
+/* ============================================================
+   UI TABS — تابع واحد و قطعی
+   ============================================================ */
+function setUiTabsActive(tabsEl, activeIndex){
+  if(!tabsEl) return;
+  var tabs = tabsEl.querySelectorAll(':scope > .ui-tab');
+  if(!tabs.length) return;
+
+  // محدوده
+  var idx = parseInt(activeIndex, 10);
+  if(isNaN(idx) || idx < 0) idx = 0;
+  if(idx >= tabs.length) idx = tabs.length - 1;
+
+  // ۱) همه کلاس active و aria-selected را پاک کن
+  for(var i = 0; i < tabs.length; i++){
+    tabs[i].classList.remove('active');
+    tabs[i].setAttribute('aria-selected', 'false');
+  }
+  // ۲) فقط یکی را active کن
+  tabs[idx].classList.add('active');
+  tabs[idx].setAttribute('aria-selected', 'true');
+
+  // ۳) تنظیم متغیرهای CSS برای عرض و موقعیت نشانگر
+  tabsEl.style.setProperty('--ui-tabs-count', tabs.length);
+  tabsEl.style.setProperty('--ui-tabs-gap', '4px');
+
+  // ۴) ست کردن data-active-index بدون پرش
+  var prev = tabsEl.getAttribute('data-active-index');
+  if(prev !== String(idx)){
+    tabsEl.style.setProperty('--ui-tabs-anim', '0s');
+    tabsEl.setAttribute('data-active-index', String(idx));
+    requestAnimationFrame(function(){
+      requestAnimationFrame(function(){
+        tabsEl.style.removeProperty('--ui-tabs-anim');
+      });
+    });
+  }
+}
+
+/* ============================================================
+   FUND TABS — indicator + counters + ripple
+   ============================================================ */
+function updateFundTabs(){
+  const bar = document.getElementById('fundTabsBar');
+  if(!bar) return;
+  const filter = window.fundFilter || 'all';
+
+  // فقط همین نوار صندوق‌ها توسط تابع امن همگام می‌شود.
+  const idxMap = { all:0, income:1, expense:2 };
+  const idx = idxMap[filter] != null ? idxMap[filter] : 0;
+  setUiTabsActive(bar, idx);
+
+  // شمارنده‌ها
+  const funds = STATE.funds || [];
+  const incCount = funds.filter(f => isIncomeFund(f)).length;
+  const expCount = funds.filter(f => isExpenseFund(f)).length;
+  const allCount = funds.length;
+  const setC = (sel, val)=>{
+    const el = bar.querySelector(sel);
+    if(!el) return;
+    const txt = toFa(val);
+    if(el.textContent !== txt){
+      el.textContent = txt;
+      el.classList.remove('count-bump');
+      void el.offsetWidth;
+      el.classList.add('count-bump');
+    }
+  };
+  setC('[data-fund-count="all"]', allCount);
+  setC('[data-fund-count="income"]', incCount);
+  setC('[data-fund-count="expense"]', expCount);
+}
+
+/* ریپل روی تب‌های صندوق — یک‌بار bind */
+(function bindFundTabRipple(){
+  if(window.__fundTabRippleBound) return;
+  window.__fundTabRippleBound = true;
+  document.addEventListener('pointerdown', function(e){
+    const tab = e.target.closest && e.target.closest('.fund-tab');
+    if(!tab) return;
+    try{
+      const r = tab.getBoundingClientRect();
+      tab.style.setProperty('--rip-x', ((e.clientX - r.left)/r.width*100) + '%');
+      tab.style.setProperty('--rip-y', ((e.clientY - r.top)/r.height*100) + '%');
+      tab.classList.add('rippling');
+      setTimeout(()=> tab.classList.remove('rippling'), 350);
+    }catch(err){}
+  }, { passive:true });
+})();
+
+function updateIeFilterCounts(allTxs){
+  try{
+    const all = Array.isArray(allTxs) ? allTxs : (STATE.transactions||[]).filter(x=>['income','expense'].includes(x.type));
+    const typeCounts = { all:0, income:0, expense:0 };
+    all.forEach(tx=>{
+      typeCounts.all++;
+      if(tx.type==='income') typeCounts.income++;
+      else if(tx.type==='expense') typeCounts.expense++;
+    });
+    uiSetCount('[data-count-for="ie-type:all"]', typeCounts.all);
+    uiSetCount('[data-count-for="ie-type:income"]', typeCounts.income);
+    uiSetCount('[data-count-for="ie-type:expense"]', typeCounts.expense);
+
+    // شمارنده چک‌ها
+    (function(){
+      const checks = Array.isArray(STATE.checks) ? STATE.checks : [];
+      const counts = { all: checks.length, received:0, paid:0, open:0, overdue:0 };
+      checks.forEach(c=>{
+        if(c.kind==='received') counts.received++;
+        if(c.kind==='paid') counts.paid++;
+        if(typeof checkIsOpen==='function' && checkIsOpen(c)) counts.open++;
+        const due = (typeof checkDueState==='function') ? checkDueState(c) : null;
+        if(due && due.key==='overdue') counts.overdue++;
+      });
+      Object.keys(counts).forEach(k=> uiSetCount('[data-count-for="check:'+k+'"]', counts[k]));
+    })();
+
+    // شمارنده اشخاص
+    (function(){
+      const persons = Array.isArray(STATE.persons) ? STATE.persons : [];
+      const counts = { all: persons.length, debtor:0, creditor:0, settled:0 };
+      persons.forEach(p=>{
+        const b = (typeof personBalance==='function') ? personBalance(p) : 0;
+        if(b>0) counts.debtor++;
+        else if(b<0) counts.creditor++;
+        else counts.settled++;
+      });
+      Object.keys(counts).forEach(k=> uiSetCount('[data-count-for="person:'+k+'"]', counts[k]));
+    })();
+
+    // شمارنده تکرارشونده
+    (function(){
+      const rs = (typeof ensureRecurring==='function') ? ensureRecurring() : (STATE.recurring||[]);
+      const counts = { all: rs.length, income:0, expense:0, active:0, inactive:0 };
+      rs.forEach(r=>{
+        if(r.type==='income') counts.income++;
+        if(r.type==='expense') counts.expense++;
+        if(r.active!==false) counts.active++;
+        else counts.inactive++;
+      });
+      Object.keys(counts).forEach(k=> uiSetCount('[data-count-for="rec:'+k+'"]', counts[k]));
+    })();
+  }catch(e){ console.warn('updateIeFilterCounts', e); }
+}
+
 
 function showGate(){ document.getElementById('gate').classList.add('show'); }
 function hideGate(){ document.getElementById('gate').classList.remove('show'); }
@@ -10537,13 +11706,6 @@ if (!isNative() && 'serviceWorker' in navigator) {
   wrapChecks(); setTimeout(wrapChecks, 0); setTimeout(wrapChecks, 400);
 
   document.addEventListener('click', function(e){
-    const delBtn = e.target.closest('[data-remove-fund], [data-remove-person], [data-delete-check], [data-remove-loan]');
-    if (!delBtn) return;
-    const card = delBtn.closest('.fund-parent-box, .fund-child-box, .ent-card, .check-card');
-    if (card) card.classList.add('card-removing');
-  }, true);
-
-  document.addEventListener('click', function(e){
     const submitBtn = e.target.closest('#sheetSubmitBtn');
     if (submitBtn){
       submitBtn.classList.add('btn-save-success');
@@ -10620,6 +11782,8 @@ if (!isNative() && 'serviceWorker' in navigator) {
     document.querySelectorAll('[data-person-filter]').forEach(b=>{
       b.classList.toggle('active', b.getAttribute('data-person-filter') === pFilter);
     });
+    try{ uiUpdateGroupIndicator('person', !!(window._personFilter && window._personFilter !== 'all')); }catch(e){}
+    try{ updateIeFilterCounts(null); }catch(e){}
 
     const wrap = document.getElementById('personList');
     if (!wrap) return;
@@ -11095,6 +12259,113 @@ if (!isNative() && 'serviceWorker' in navigator) {
   };
   document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });
   setInterval(refresh, 60000);
+})();
+
+/* ---------- راه‌اندازی ماژول انیمیشن ---------- */
+(function initAnimModule(){
+  if(typeof AnimModule==='undefined')return;
+  window.anim=AnimModule.create({
+    cardSelectors:['#fundList .fund-parent-box','#fundList .fund-child-box','#personList .ent-card','#checkList .check-card','#loanList .ent-card','#ieList .ent-card'],
+    cardIdAttr:'data-fund-card',
+    valuePulseSelectors:'.sc-val, .an-cell .av, .fcal-stats b, .check-amount, .eh-badge',
+    rippleSelector:'.btn, .btn-sm, .btn-ghost-sm, .add-inline-btn, .btn-panel, .btn-brass, .btn-sage, .btn-rust, .check-filter, button'
+  });
+  document.querySelectorAll('.view').forEach(el=>el.classList.add('anim-view'));
+  const drawer=document.getElementById('drawer'),drawerOverlay=document.getElementById('drawerOverlay');
+  if(drawer){drawer.classList.add('anim-drawer');drawer.querySelectorAll('.drawer-item').forEach(el=>el.classList.add('anim-drawer-item'))}
+  if(drawerOverlay)drawerOverlay.classList.add('anim-drawer-overlay');
+  const sheetOverlay=document.getElementById('sheetOverlay');
+  if(sheetOverlay){sheetOverlay.classList.add('anim-sheet-overlay');const sheet=sheetOverlay.querySelector('.sheet');if(sheet)sheet.classList.add('anim-sheet')}
+  window.anim.observe();window.anim.bindAll(document);window.anim.snapshotCards();
+  if(typeof window.renderAll==='function'&&!window.renderAll._animWrapped){const _orig=window.renderAll;window.renderAll=function(){const r=_orig.apply(this,arguments);setTimeout(()=>{try{window.anim.snapshotCards();window.anim.animateNewCards();window.anim.pulseValues()}catch(e){}try{window.anim.bindRipples()}catch(e){}},40);return r};window.renderAll._animWrapped=true}
+  if(typeof window.switchTab==='function'&&!window.switchTab._animWrapped){const _orig=window.switchTab;window.switchTab=function(){const r=_orig.apply(this,arguments);try{window.scrollTo({top:0,behavior:reducedMotionLocal()?'auto':'smooth'})}catch(e){}setTimeout(()=>{const activeView=document.querySelector('.view.active');if(activeView){activeView.style.animation='none';void activeView.offsetWidth;activeView.style.animation=''}},10);return r};window.switchTab._animWrapped=true}
+  function reducedMotionLocal(){try{return window.matchMedia('(prefers-reduced-motion: reduce)').matches}catch(e){return false}}
+  if(typeof window.openFormSheet==='function'&&!window.openFormSheet._animWrapped){const _orig=window.openFormSheet;window.openFormSheet=function(){const r=_orig.apply(this,arguments);setTimeout(()=>{try{const ov=document.getElementById('sheetOverlay');if(ov){ov.classList.add('anim-sheet-overlay');ov.classList.remove('closing');ov.classList.add('anim-show');window.anim.bindRipples(ov)}}catch(e){}},20);return r};window.openFormSheet._animWrapped=true}
+  if(typeof window.closeSheet==='function'&&!window.closeSheet._animWrapped){const _orig=window.closeSheet;window.closeSheet=function(){const ov=document.getElementById('sheetOverlay');if(ov&&ov.classList.contains('show')&&!reducedMotionLocal()){ov.classList.add('closing','anim-closing');setTimeout(()=>{try{_orig.apply(this,arguments)}finally{ov.classList.remove('closing','anim-closing','anim-show')}},320);return}const r=_orig.apply(this,arguments);if(ov)ov.classList.remove('anim-show','anim-closing','closing');setTimeout(()=>{try{window.anim.snapshotCards();window.anim.animateNewCards()}catch(e){}},120);return r};window.closeSheet._animWrapped=true}
+  if(typeof window.showToast==='function'&&!window.showToast._animWrapped){const _orig=window.showToast;window.showToast=function(msg){const el=document.getElementById('toast');if(el&&window.anim){el.classList.add('anim-toast');try{el.textContent=msg}catch(e){}window.anim.showToast(el);return}return _orig.apply(this,arguments)};window.showToast._animWrapped=true}
+
+  document.addEventListener('keydown',function(e){if(e.key!=='Escape')return;const ov=document.getElementById('sheetOverlay');if(!ov||!ov.classList.contains('show'))return;try{window.closeSheet()}catch(err){}});
+  console.log('[AnimModule] initialized');
+})();
+/* پایان بخش INIT */
+
+</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4f9e3978ef17ba9',t:'MTc5Mjg1NDQyNA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>
+/* ============================================================
+   FUND GLOW — پشتیبانی تعاملی
+   ============================================================ */
+(function initFundGlow(){
+  'use strict';
+  const reduced = () => {
+    try{ return matchMedia('(prefers-reduced-motion: reduce)').matches; }
+    catch(e){ return false; }
+  };
+  function bindPress(el){
+    if (!el || el._fundGlowBound) return;
+    el._fundGlowBound = true;
+    const press = () => {
+      if (reduced()) return;
+      el.classList.remove('fund-glow-press');
+      void el.offsetWidth;
+      el.classList.add('fund-glow-press');
+      setTimeout(() => el.classList.remove('fund-glow-press'), 360);
+    };
+    el.addEventListener('pointerdown', press, { passive: true });
+  }
+  function checkGoalCompletion(){
+    if (reduced()) return;
+    document.querySelectorAll('.fund-child-box').forEach(el => {
+      const doneWrap = el.querySelector('.fc-goal-wrap.done');
+      if (!doneWrap || el._fundGlowDone) return;
+      el._fundGlowDone = true;
+      el.classList.add('fund-glow-complete');
+      setTimeout(() => el.classList.remove('fund-glow-complete'), 1300);
+    });
+  }
+  function wrapRenderFunds(){
+    if (typeof window.renderFunds !== 'function' || window.renderFunds._fundGlowWrapped) return;
+    const _orig = window.renderFunds;
+    window.renderFunds = function(){
+      const before = new WeakSet();
+      document.querySelectorAll('.fund-parent-box, .fund-child-box').forEach(el => before.add(el));
+      const r = _orig.apply(this, arguments);
+      setTimeout(() => {
+        document.querySelectorAll('.fund-parent-box, .fund-child-box').forEach(el => {
+          if (!before.has(el) && !el._fundGlowSeen){
+            el._fundGlowSeen = true;
+            if (!reduced()){
+              el.classList.add('fund-glow-new');
+              setTimeout(() => el.classList.remove('fund-glow-new'), 900);
+            }
+          }
+          bindPress(el);
+        });
+        checkGoalCompletion();
+      }, 40);
+      return r;
+    };
+    window.renderFunds._fundGlowWrapped = true;
+  }
+  function boot(){
+    wrapRenderFunds();
+    document.querySelectorAll('.fund-parent-box, .fund-child-box').forEach(bindPress);
+    if (window.MutationObserver && document.body && !window._fundGlowObserver){
+      const obs = new MutationObserver(() => {
+        document.querySelectorAll('.fund-parent-box:not([data-fund-glow-bound]), .fund-child-box:not([data-fund-glow-bound])').forEach(el => {
+          el.setAttribute('data-fund-glow-bound', '1');
+          bindPress(el);
+        });
+        checkGoalCompletion();
+      });
+      obs.observe(document.body, { childList: true, subtree: true });
+      window._fundGlowObserver = obs;
+    }
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
+  setTimeout(boot, 400);
+  setTimeout(boot, 1200);
+  console.log('[FundGlow] ready');
 })();
 </script>
 </body>
