@@ -12438,7 +12438,165 @@ body.theme-light .app-header,
 /* promote less: drop will-change hints that keep many layers alive */
 .ent-card,.check-card,.pc-card,.sum-card,.fund-parent-box,.fund-child-box{will-change:auto !important;}
 </style>
+<!-- ZERO ANIMATION v1.0 -->
+<style id="zero-animation-css">
+*,*::before,*::after{
+  animation:none !important;animation-duration:0s !important;animation-delay:0s !important;
+  animation-iteration-count:1 !important;animation-play-state:paused !important;
+  transition:none !important;transition-duration:0s !important;transition-delay:0s !important;
+  will-change:auto !important;
+}
+.card-new,.card-removing,.value-updated,.value-pop,.count-bump,.just-added,.ripple,.rippling,
+.btn-save-success,.saved-pulse,.animate,.num-pop,.badge-pulse,.skeleton,.fund-glow-press,
+.fund-glow-new,.fund-glow-complete,.view.active,.sheet-overlay.show .sheet,.sheet-overlay.closing .sheet,
+.drawer.show .drawer-item,.drawer.show .drawer-head,.drawer.show .drawer-foot,.pin-sheet.show .pin-sheet-box,
+.pin-dots i.on,.fund-pct-modal,.fund-pct-dialog,.modal-overlay.show .modal-box,.toast.show,#topBanner.show,
+.fcal-mc.sel,.jcal-day.selected,.chip.active,.wp-dot.now,.wp-dot.done,.btn-primary.btn-lg::before,.empty-state .ic{
+  animation:none !important;transform:none !important;transition:none !important;
+}
+.ent-card:hover,.check-card:hover,.pc-card:hover,.fund-parent-box:hover,.fund-child-box:hover,.sum-card:hover,
+.budget-card:hover,.mfp-card:hover,.chart-card:hover,.pc-sum-card:hover,.rec-row:hover,.budget-row:hover{
+  transform:none !important;box-shadow:var(--shadow-soft) !important;
+}
+button:active,.btn:active,.tab-btn:active,.chip:active,.check-filter:active,.ui-chip:active,.fund-tab:active,
+.drawer-item:active,.person-action-btn:active,.add-inline-btn:active,.er-del:active,.pc-del:active,
+.pc-entry-del:active,.pc-action:active,.pc-foot-btn:active,[data-fund-card]:active,[data-fund-card] *:active,
+[data-person-card]:active,[data-loan-card]:active,[data-check-card]:active{transform:none !important;}
+.drawer-overlay,.sheet-overlay,.pin-sheet,.fund-pct-modal,.mf-selector-overlay,.psv-overlay,.card,.stat-card,
+.kpi-card,.income-card,.list-item,.sheet,.toast,.tabbar,.modal-box,.topbar,.qs-results,.btn-ghost,.chip,.inp,
+.field input,.field select,.field textarea,.li-badge,.pill-red,.pill-warn,.brand-mark{
+  backdrop-filter:none !important;-webkit-backdrop-filter:none !important;filter:none !important;
+}
+#fundList>*,#personList>*,#checkList>*,#loanList>*,#ieList>*,#recentList>*,#debtList>*,#chequeList>*,
+#reminderList>*,#recListPanel>*,#upcomingList>*,#dashCategories>*,#dashUpcoming>*,#dashPersonsMini>*,
+.rec-row,.budget-row,.pc-entry{content-visibility:visible !important;contain-intrinsic-size:auto !important;}
+.ent-card,.check-card,.pc-card,.fund-parent-box,.fund-child-box,.sum-card,.budget-card,.mfp-card,.chart-card{
+  contain:layout style !important;
+}
+html{scroll-behavior:auto !important;scrollbar-gutter:stable !important;}
+.tabbar,#topBanner,.topbar{transform:translateZ(0);backface-visibility:hidden;}
+input:focus,select:focus,textarea:focus{outline:none !important;box-shadow:0 0 0 2px rgba(23,139,255,.15) !important;}
+button,.btn,.chip,.tab-btn,.check-filter,.ui-chip,.fund-tab,.drawer-item{
+  transition:background-color 0s,color 0s,border-color 0s !important;
+}
+.sc-val,.an-cell .av,.stat-card .num,.kpi-card .v,.income-card .ic-val,.fcal-stats b,.check-amount{
+  animation:none !important;transform:none !important;transition:none !important;
+}
+.tbadge,.eh-badge,.pct-badge,.ui-chip-count,.fund-tab .ft-count,.badge-pill,.remind-badge{
+  animation:none !important;transform:none !important;
+}
+.bud-bar>i,.fund-pct-track>span,.fc-goal-track>i,.mfp-progress>i,.budget-row-track>i,.loan-progress .budget-row-track>i{
+  transition:none !important;animation:none !important;
+}
+.fcal-mc,.jcal-day,.cal-day{animation:none !important;transition:background-color 0s,border-color 0s !important;}
+.fcal-mc:hover,.jcal-day:hover,.cal-day:hover{transform:none !important;}
+.ripple,.light-ripple,.btn::after,.btn::before,button::after,button::before,.chip::after,.tab-btn::after{
+  display:none !important;animation:none !important;
+}
+.tab-btn .ic,.li-icon,.section-title .ic,.sg-ic,.ic-box{transition:none !important;transform:none !important;animation:none !important;}
+.user-idle *,.user-idle *::before,.user-idle *::after{animation:none !important;transition:none !important;}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none !important;transition:none !important;}}
+.device-low *,.device-low *::before,.device-low *::after{
+  animation:none !important;transition:none !important;box-shadow:none !important;filter:none !important;text-shadow:none !important;
+}
+.device-low .ent-card,.device-low .check-card,.device-low .pc-card,.device-low .fund-parent-box,
+.device-low .fund-child-box,.device-low .sum-card{
+  background:var(--panel) !important;border:1px solid var(--line) !important;box-shadow:none !important;
+}
+.ent-card,.check-card,.pc-card,.fund-parent-box,.fund-child-box,.sum-card,.budget-card,.mfp-card,.chart-card,
+.list-item,.reminder-item,.pb-item,.bar-row,.rec-row,.budget-row,.pc-entry{transform:none !important;will-change:auto !important;}
+.skeleton{background:var(--panel-2) !important;animation:none !important;}
+.sync-badge .sb-dot{animation:none !important;}
+.live-total,.wizard-sticky-nav{transform:none !important;transition:none !important;}
+.sheet-overlay,.modal-overlay,.drawer-overlay,.pin-sheet{transition:opacity 0.05s linear !important;}
+.empty-state .ic,.brand-mark,.li-icon{filter:none !important;}
+/* FIX: عناصری که opacity:0 پایه داشتند و با انیمیشن ظاهر می‌شدند */
+.fund-tab,.ui-tab,.ui-chip,.ui-chips.is-entering .ui-chip{opacity:1 !important;transform:none !important;}
+</style>
 
+<script id="zero-animation-js">
+(function zeroAnimation(){
+  'use strict';
+  if(window.__zeroAnimationReady) return;
+  window.__zeroAnimationReady = true;
+
+  const deadFunctions = [
+    'bindPress','bindCardTouch','bindAllRipples','bindRipples','bindLightRipple','pulseValues',
+    'animateNewCards','snapshotCards','bindFundGlowRipple','bindFundTabRipple','uiBindChipRipple',
+    'initFundGlow','attachRipple','animateCount','bindRipple'
+  ];
+  deadFunctions.forEach(name => { try{ window[name] = () => {}; }catch(e){} });
+
+  ['__cleanObserver','__definitiveObs','__smartCardObs','_fundGlowObserver','__cardObserver',
+   '__globalObs','__animModuleObs','__smoothObs','__zeroLagCleaner'].forEach(key => {
+    try{
+      if(window[key] && window[key].disconnect){ window[key].disconnect(); window[key] = null; }
+    }catch(e){}
+  });
+
+  const animClasses = ['card-new','card-removing','value-updated','value-pop','count-bump','just-added',
+    'ripple','rippling','btn-save-success','saved-pulse','animate','num-pop','badge-pulse',
+    'fund-glow-press','fund-glow-new','fund-glow-complete'];
+  const animSel = '.' + animClasses.join(', .');
+
+  if(window.MutationObserver){
+    let cleanScheduled = false;
+    const cleaner = new MutationObserver(() => {
+      if(cleanScheduled) return;
+      cleanScheduled = true;
+      requestAnimationFrame(() => {
+        cleanScheduled = false;
+        document.querySelectorAll(animSel).forEach(el => animClasses.forEach(c => el.classList.remove(c)));
+      });
+    });
+    cleaner.observe(document.body, {childList:true, subtree:true, attributes:true, attributeFilter:['class']});
+    window.__zeroAnimCleaner = cleaner;
+  }
+
+  document.addEventListener('click', (e) => {
+    const target = e.target;
+    if(!target || !target.closest) return;
+    const card = target.closest('[data-fund-card], [data-person-card], [data-loan-card], [data-check-card], .ent-card, .fund-parent-box, .fund-child-box, button, .btn');
+    if(card){
+      animClasses.forEach(c => card.classList.remove(c));
+      card.style.animation = 'none';
+      card.style.transform = '';
+    }
+  }, true);
+
+  setInterval(() => {
+    if(document.hidden) return;
+    document.querySelectorAll(animSel).forEach(el => animClasses.forEach(c => el.classList.remove(c)));
+    document.querySelectorAll('[style*="will-change"]').forEach(el => { el.style.willChange = 'auto'; });
+    document.querySelectorAll('[style*="animation"]').forEach(el => {
+      if(el.style.animation && el.style.animation !== 'none') el.style.animation = 'none';
+    });
+  }, 1000);
+
+  function killInfinite(){
+    document.querySelectorAll('*').forEach(el => {
+      try{
+        const s = getComputedStyle(el);
+        if(s.animationIterationCount === 'infinite' && s.animationName !== 'none') el.style.animation = 'none';
+      }catch(e){}
+    });
+  }
+  [100,500,1500,3000].forEach(t => setTimeout(killInfinite, t));
+
+  let idleTimer = null, isIdle = false;
+  function goIdle(){ if(isIdle) return; isIdle = true; document.documentElement.classList.add('user-idle'); }
+  function goActive(){
+    if(isIdle){ isIdle = false; document.documentElement.classList.remove('user-idle'); }
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(goIdle, 5000);
+  }
+  ['touchstart','mousedown','keydown','scroll','pointerdown','click'].forEach(ev => {
+    document.addEventListener(ev, goActive, {passive:true, capture:true});
+  });
+  idleTimer = setTimeout(goIdle, 5000);
+})();
+</script>
+<!-- END ZERO ANIMATION -->
 <!-- TOUCH OF LIFE -->
 <style id="touch-of-life-css">
 .view.active{animation:touchFadeIn 150ms ease-out !important;}
@@ -12473,6 +12631,34 @@ input,select,textarea,.jcal-trigger{transition:border-color 120ms ease-out,box-s
   transition:background-color 120ms ease-out,color 120ms ease-out,border-color 120ms ease-out,transform 80ms ease-out !important;}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none !important;transition:none !important;}}
 .device-low *,.device-low *::before,.device-low *::after{animation:none !important;transition:none !important;}
+
+/* ===== بهینه‌سازی حرکت: انیمیشن‌های کوتاه و سبک ===== */
+:root { scroll-behavior: auto; }
+*, *::before, *::after {
+  animation-duration: .18s !important;
+  animation-timing-function: ease-out !important;
+  transition-duration: .14s !important;
+  transition-timing-function: ease-out !important;
+  scroll-behavior: auto !important;
+}
+/* blurهای تمام‌صفحه روی گوشی‌های ضعیف سنگین‌اند؛ شفافیت حفظ می‌شود */
+.drawer-overlay, .sheet-overlay, .fund-pct-modal {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+/* حرکت کم اما محسوس برای تعامل‌ها */
+button, .drawer-item, .sum-card, .ent-card, .check-card {
+  transition: transform .12s ease-out, border-color .14s ease-out,
+              background-color .14s ease-out, box-shadow .14s ease-out !important;
+}
+button:active, .drawer-item:active { transform: scale(.985); }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
 </style>
 <script id="touch-of-life-js">
 (function touchOfLife(){
