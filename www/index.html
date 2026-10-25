@@ -3616,6 +3616,27 @@ body.theme-light .fund-parent-box:hover::before{ opacity: .7; }
 body.theme-light .fund-child-box::before{ opacity: .25; }
 body.theme-light .fund-child-box:hover .fc-name{ color: var(--accent-text); text-shadow: 0 0 10px rgba(11,107,196,.25); }
 </style>
+<style id="perf-patch">
+/* PERF PATCH: safe subset, no visual/feature removal */
+.fund-child-box::before,.fund-parent-box::before,.percent-warn,.rec-banner,
+.check-tag.bad,.check-tag.warn,.fcal-mc.sel,.jcal-day.selected,
+.ui-chip.active::before,.check-filter.active::after,.check-filter.active::before{
+  animation-play-state:paused !important;
+}
+.fund-parent-box:hover::before,.fund-child-box:hover::before,.ui-chip.active:hover::before,
+.check-filter.active:hover::after,.check-filter.active:hover::before{
+  animation-play-state:running !important;
+}
+.drawer-overlay,.sheet-overlay,.pin-sheet,.fund-pct-modal,.mf-selector-overlay{
+  backdrop-filter:none !important;-webkit-backdrop-filter:none !important;
+}
+.sheet,.fund-parent-box,.fund-child-box,.ent-card,.sum-card,.check-card,.pc-card,.drawer,.view.active{
+  will-change:auto !important;
+}
+@media (hover:none){
+  .ent-card:hover,.check-card:hover,.fund-parent-box:hover,.fund-child-box:hover{transform:none !important;}
+}
+</style>
 </head>
 <body class="theme-light">
 
@@ -12290,7 +12311,7 @@ if (!isNative() && 'serviceWorker' in navigator) {
 /* پایان بخش INIT */
 
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4f9e3978ef17ba9',t:'MTc5Mjg1NDQyNA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>
+<script>
 /* ============================================================
    FUND GLOW — پشتیبانی تعاملی
    ============================================================ */
@@ -12368,5 +12389,103 @@ if (!isNative() && 'serviceWorker' in navigator) {
   console.log('[FundGlow] ready');
 })();
 </script>
+<style id="perf-animation-fix">
+/* Perf fix: stop all infinite decorative animations; keep the look and the one-shot entrance animations */
+.ui-chip::before,
+.check-filter.active::after,
+.fund-parent-box::before,
+.fund-child-box::before,
+.ent-card:hover,.check-card:hover,.pc-card:hover,.fund-parent-box:hover,.fund-child-box:hover,
+.fcal-mc.sel,.jcal-day.selected,
+.percent-warn,.rec-banner,
+.check-tag.bad,.check-tag.warn{
+  animation:none !important;
+}
+.fund-child-box::before{opacity:.45 !important;}
+/* one-shot click/entry effects that re-fire on every re-render: stop them (no logic depends on animationend) */
+.fund-glow-press,.fund-glow-new,.fund-glow-complete,
+.card-new,.value-updated,.count-bump,.just-added{
+  animation:none !important;
+}
+/* ===== reduced entrance motion: same end states, much shorter, no staggered delays ===== */
+.view.active{animation-duration:.15s !important;}
+.ent-card,.sum-card,.check-card,
+.view[data-view="fund"].active .fund-parent-box{animation-duration:.15s !important;animation-delay:0s !important;}
+.sheet-overlay.show,.sheet-overlay.closing,.sheet-overlay.closing .sheet,
+.fund-pct-modal,.fund-pct-dialog{animation-duration:.18s !important;}
+.sheet-overlay.show .sheet,.pin-sheet.show .pin-sheet-box{animation-duration:.22s !important;}
+/* staggered inner items: jump straight to their final state */
+.sheet-overlay.show .sheet .form-field,
+.sheet-overlay.show .sheet #sheetSubmitBtn,
+.sheet-overlay.show .sheet h3,
+.drawer.show .drawer-item,.drawer.show .drawer-head,.drawer.show .drawer-foot,
+.ui-chips.is-entering .ui-chip,
+.fund-child-box:hover::after{
+  animation-duration:.01ms !important;animation-delay:0s !important;
+}
+/* ===== anti-jump: entrances are opacity-only (no vertical shift on tab switch / render), no smooth page scroll ===== */
+html{scroll-behavior:auto !important;}
+@keyframes viewAliveIn{from{opacity:0}to{opacity:1}}
+@keyframes cardAliveIn{from{opacity:0}to{opacity:1}}
+@keyframes fundCardIn{from{opacity:0}to{opacity:1}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+/* the only two blurs left in the file (the overlays were already handled): sticky header in light mode + previous-state overlay */
+body.theme-light .app-header,
+.psv-overlay{
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+}
+/* promote less: drop will-change hints that keep many layers alive */
+.ent-card,.check-card,.pc-card,.sum-card,.fund-parent-box,.fund-child-box{will-change:auto !important;}
+</style>
+
+<!-- TOUCH OF LIFE -->
+<style id="touch-of-life-css">
+.view.active{animation:touchFadeIn 150ms ease-out !important;}
+@keyframes touchFadeIn{from{opacity:0;}to{opacity:1;}}
+.sheet-overlay.show .sheet{animation:touchSheetIn 180ms ease-out !important;}
+@keyframes touchSheetIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+.sheet-overlay.closing .sheet{animation:touchSheetOut 120ms ease-in !important;}
+@keyframes touchSheetOut{from{opacity:1;}to{opacity:0;}}
+.toast.show{animation:touchToastIn 150ms ease-out !important;}
+@keyframes touchToastIn{from{opacity:0;}to{opacity:1;}}
+.drawer{transition:transform 180ms ease-out !important;}
+.drawer.show .drawer-item{animation:touchFadeIn 120ms ease-out !important;}
+button,.btn,.chip,.check-filter,.ui-chip,.fund-tab,.tab-btn{transition:transform 80ms ease-out !important;}
+button:active:not(:disabled),.btn:active:not(:disabled),.chip:active,.check-filter:active,.ui-chip:active,
+.fund-tab:active,.tab-btn:active{transform:scale(.97) !important;}
+@media (hover:hover){
+  .ent-card,.check-card,.pc-card,.fund-parent-box,.fund-child-box,.budget-card,.mfp-card,.chart-card,
+  .list-item,.reminder-item{transition:border-color 120ms ease-out !important;}
+  .ent-card:hover,.check-card:hover,.pc-card:hover,.fund-parent-box:hover,.fund-child-box:hover,
+  .budget-card:hover,.mfp-card:hover,.chart-card:hover,.list-item:hover,.reminder-item:hover{
+    border-color:rgba(23,139,255,.25) !important;}
+}
+.ent-card,.check-card,.pc-card,.sum-card,.fund-parent-box,.fund-child-box,.list-item,.reminder-item,.pb-item,.bar-row{
+  animation:touchCardIn 120ms ease-out !important;}
+@keyframes touchCardIn{from{opacity:0;}to{opacity:1;}}
+input,select,textarea,.jcal-trigger{transition:border-color 120ms ease-out,box-shadow 120ms ease-out !important;}
+.bud-bar>i,.fund-pct-track>span,.fc-goal-track>i,.mfp-progress>i,.budget-row-track>i,.loan-progress .budget-row-track>i{
+  transition:width 250ms ease-out !important;}
+.sc-val,.an-cell .av,.stat-card .num,.kpi-card .v,.income-card .ic-val,.fcal-stats b,.check-amount{
+  transition:color 150ms ease-out !important;}
+.tab-btn,.check-filter,.ui-chip,.fund-tab,.chip{
+  transition:background-color 120ms ease-out,color 120ms ease-out,border-color 120ms ease-out,transform 80ms ease-out !important;}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none !important;transition:none !important;}}
+.device-low *,.device-low *::before,.device-low *::after{animation:none !important;transition:none !important;}
+</style>
+<script id="touch-of-life-js">
+(function touchOfLife(){
+  'use strict';
+  if(window.__touchOfLifeReady) return;
+  window.__touchOfLifeReady = true;
+  const cores = navigator.hardwareConcurrency || 4;
+  const mem = navigator.deviceMemory || 4; // Safari/Firefox don't expose it
+  if(cores <= 2 || mem <= 2) document.documentElement.classList.add('device-low');
+})();
+</script>
+<!-- END TOUCH OF LIFE -->
+
+
 </body>
 </html>
