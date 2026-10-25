@@ -12333,15 +12333,17 @@ if (!isNative() && 'serviceWorker' in navigator) {
     };
     el.addEventListener('pointerdown', press, { passive: true });
   }
+  function checkGoalCompletionFor(el){
+    if (reduced() || !el || el._fundGlowDone) return;
+    const doneWrap = el.querySelector('.fc-goal-wrap.done');
+    if (!doneWrap) return;
+    el._fundGlowDone = true;
+    el.classList.add('fund-glow-complete');
+    setTimeout(() => el.classList.remove('fund-glow-complete'), 1300);
+  }
   function checkGoalCompletion(){
     if (reduced()) return;
-    document.querySelectorAll('.fund-child-box').forEach(el => {
-      const doneWrap = el.querySelector('.fc-goal-wrap.done');
-      if (!doneWrap || el._fundGlowDone) return;
-      el._fundGlowDone = true;
-      el.classList.add('fund-glow-complete');
-      setTimeout(() => el.classList.remove('fund-glow-complete'), 1300);
-    });
+    document.querySelectorAll('.fund-child-box').forEach(checkGoalCompletionFor);
   }
   function wrapRenderFunds(){
     if (typeof window.renderFunds !== 'function' || window.renderFunds._fundGlowWrapped) return;
@@ -12371,12 +12373,42 @@ if (!isNative() && 'serviceWorker' in navigator) {
     wrapRenderFunds();
     document.querySelectorAll('.fund-parent-box, .fund-child-box').forEach(bindPress);
     if (window.MutationObserver && document.body && !window._fundGlowObserver){
-      const obs = new MutationObserver(() => {
-        document.querySelectorAll('.fund-parent-box:not([data-fund-glow-bound]), .fund-child-box:not([data-fund-glow-bound])').forEach(el => {
-          el.setAttribute('data-fund-glow-bound', '1');
-          bindPress(el);
+      // Batch DOM changes and inspect only newly-added subtrees instead of
+      // rescanning every fund card after every unrelated page mutation.
+      let pendingNodes = new Set();
+      let framePending = false;
+      const collectFundCards = root => {
+        if (!root || root.nodeType !== 1) return;
+        // Content may be added inside an existing child card (e.g. a completed goal).
+        const ownerCard = root.closest && root.closest('.fund-child-box');
+        if (ownerCard) checkGoalCompletionFor(ownerCard);
+        if (root.matches && root.matches('.fund-parent-box, .fund-child-box')) {
+          root.setAttribute('data-fund-glow-bound', '1');
+          bindPress(root);
+          if (root.matches('.fund-child-box')) checkGoalCompletionFor(root);
+        }
+        if (root.querySelectorAll) {
+          root.querySelectorAll('.fund-parent-box, .fund-child-box').forEach(el => {
+            el.setAttribute('data-fund-glow-bound', '1');
+            bindPress(el);
+            if (el.matches('.fund-child-box')) checkGoalCompletionFor(el);
+          });
+        }
+      };
+      const obs = new MutationObserver(mutations => {
+        for (const mutation of mutations) {
+          mutation.addedNodes.forEach(node => {
+            if (node && node.nodeType === 1) pendingNodes.add(node);
+          });
+        }
+        if (!pendingNodes.size || framePending) return;
+        framePending = true;
+        requestAnimationFrame(() => {
+          framePending = false;
+          const nodes = pendingNodes;
+          pendingNodes = new Set();
+          nodes.forEach(collectFundCards);
         });
-        checkGoalCompletion();
       });
       obs.observe(document.body, { childList: true, subtree: true });
       window._fundGlowObserver = obs;
@@ -12389,5 +12421,21 @@ if (!isNative() && 'serviceWorker' in navigator) {
   console.log('[FundGlow] ready');
 })();
 </script>
+
+<style id="safe-background-animation-patch">
+  html.app-background *, html.app-background *::before, html.app-background *::after {
+    animation-play-state: paused !important;
+  }
+</style>
+<script>
+(function safeBackgroundAnimationPause(){
+  if (window.__safeBackgroundAnimationPause) return;
+  window.__safeBackgroundAnimationPause = true;
+  const update = () => document.documentElement.classList.toggle('app-background', document.hidden);
+  document.addEventListener('visibilitychange', update, { passive: true });
+  update();
+})();
+</script>
+
 </body>
 </html>
